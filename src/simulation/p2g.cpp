@@ -32,6 +32,9 @@ void Simulation::P2G(){
                     for(int k = k_base; k < k_base+4; k++){
                         T zi = grid.z[k];
                         T weight = wip(xp(0), xp(1), xp(2), xi, yi, zi, one_over_dx);
+                        #ifdef MULTIMATERIAL
+                            weight *= particles.mass[p];
+                        #endif
                         if (weight > 1e-25){
                             grid_mass_local[ind(i,j,k)]  += weight;
                             grid_v_local[ind(i,j,k)]     += particles.v[p] * weight;
@@ -48,6 +51,9 @@ void Simulation::P2G(){
                     } // end for k
         #else
                     T weight = wip(xp(0), xp(1), xi, yi, one_over_dx);
+                    #ifdef MULTIMATERIAL
+                        weight *= particles.mass[p];
+                    #endif
                     if (weight > 1e-25){
                         grid_mass_local[ind(i,j)]  += weight;
                         grid_v_local[ind(i,j)]     += particles.v[p] * weight;
@@ -79,6 +85,7 @@ void Simulation::P2G(){
 
     ///////////////////////////////////////////////////////////
     // At this point in time grid.mass is equal to m_i / m_p //
+    // Or equal to m_i total if MULTIMATERIAL                //
     ///////////////////////////////////////////////////////////
 
     #pragma omp parallel for num_threads(n_threads)
@@ -93,8 +100,9 @@ void Simulation::P2G(){
             grid.friction[l] /= mi;
     }
 
-    for(auto&& m: grid.mass){
-        m *= particle_mass;
-    }
-
+    // If MULTIMATERIAL, the particles mass is already taken in account
+    #ifndef MULTIMATERIAL
+        for(auto&& m: grid.mass)
+            m *= particle_mass;
+    #endif
 } // end P2G

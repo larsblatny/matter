@@ -64,7 +64,9 @@ public:
   // Particle data
   Particles particles;
   unsigned int Np;
+#ifndef MULTIMATERIAL
   T particle_mass;
+#endif
   T particle_volume; // initial particle volume
   T dx;
 
@@ -73,7 +75,9 @@ public:
   PlasticModel plastic_model = NoPlasticity;
   HardeningLaw hardening_law = ExpoImpl;
 
+#ifndef MULTIMATERIAL
   T E = 1e6; // Young's modulus (3D)
+#endif
   T nu = 0.3; // Poisson's ratio (3D)
 
   bool use_pradhana = true;

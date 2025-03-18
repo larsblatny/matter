@@ -48,6 +48,9 @@ void Simulation::MUSL(){
                     for(int k = k_base; k < k_base+4; k++){
                         T zi = grid.z[k];
                         T weight = wip(xp(0), xp(1), xp(2), xi, yi, zi, one_over_dx);
+                        #ifdef MULTIMATERIAL
+                            weight *= particles.mass[p];
+                        #endif
                         if (weight > 1e-25){
                             grid_v_local[ind(i,j,k)] += particles.v[p] * weight;
                             if (flip_ratio < 0){ // APIC
@@ -61,6 +64,9 @@ void Simulation::MUSL(){
                     } // end for k
         #else
                     T weight = wip(xp(0), xp(1), xi, yi, one_over_dx);
+                    #ifdef MULTIMATERIAL
+                        weight *= particles.mass[p];
+                    #endif
                     if (weight > 1e-25){
                         grid_v_local[ind(i,j)]     += particles.v[p] * weight;
                         if (flip_ratio < 0){ // APIC
@@ -87,10 +93,15 @@ void Simulation::MUSL(){
 
     for (int l = 0; l<grid_nodes; l++){
         T mi = grid.mass[l];
-        if (mi > 0)
-            grid.v[l] /= (mi/particle_mass);
-        else
+        if (mi > 0){
+            #ifdef MULTIMATERIAL
+                grid.v[l] /= mi;
+            #else
+                grid.v[l] /= (mi/particle_mass);
+            #endif    
+        } else {
             grid.v[l].setZero();
+        }
     }
 
 } // end P2G_MUSL

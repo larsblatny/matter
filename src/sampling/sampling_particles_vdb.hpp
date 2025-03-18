@@ -36,7 +36,9 @@ void sampleParticlesFromVdb(S& sim, ObjectVdb& obj, T kRadius, T ppc = 6)
 
         sim.dx = std::cbrt(ppc / T(square_samples.size()) * L(0)*L(1)*L(2));
         sim.particle_volume = sim.dx * sim.dx * sim.dx / ppc;
-        sim.particle_mass = sim.rho * sim.particle_volume;
+        #ifndef MULTIMATERIAL
+            sim.particle_mass = sim.rho * sim.particle_volume;
+        #endif
 
     #else // TWODIM
         debug("    Min corner: ", min_corner(0), ", ", min_corner(1));
@@ -48,7 +50,9 @@ void sampleParticlesFromVdb(S& sim, ObjectVdb& obj, T kRadius, T ppc = 6)
 
         sim.dx = std::sqrt(ppc / T(square_samples.size()) * L(0)*L(1));
         sim.particle_volume = sim.dx * sim.dx / ppc;
-        sim.particle_mass = sim.rho * sim.particle_volume;
+        #ifndef MULTIMATERIAL
+            sim.particle_mass = sim.rho * sim.particle_volume;
+        #endif
     #endif // DIMENSION
 
     debug("    Number of square samples: ", square_samples.size());

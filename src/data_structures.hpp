@@ -24,6 +24,11 @@ public:
       tau.resize(Np);  std::fill( tau.begin(),  tau.end(),  TM::Zero()     );
       F.resize(Np);    std::fill( F.begin(),    F.end(),    TM::Identity() );
       Bmat.resize(Np); std::fill( Bmat.begin(), Bmat.end(), TM::Zero()     );
+      
+      #ifdef MULTIMATERIAL
+      mass.resize(Np);  std::fill( mass.begin(), mass.end(), 0.0 );
+      E.resize(Np);     std::fill( E.begin(),    E.end()   , 0.0 );
+      #endif
   }
 
   std::vector<TV> x;
@@ -42,6 +47,11 @@ public:
   std::vector<TM> tau;
   std::vector<TM> F;
   std::vector<TM> Bmat;
+  
+  #ifdef MULTIMATERIAL
+  std::vector<T> mass;
+  std::vector<T> E;
+  #endif
 
 };
 

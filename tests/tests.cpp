@@ -33,7 +33,12 @@ TEST(BoundaryTest, AnalyticSLIPFREE) {
 
     sim.dx = 0.001;
     sim.particle_volume = std::pow(sim.dx, sim.dim);
-    sim.particle_mass = sim.rho * sim.particle_volume;
+    #ifdef MULTIMATERIAL
+        for(int p = 0; p < sim.Np; p++)
+            sim.particles.mass = sim.rho;
+    #else
+        sim.particle_mass = sim.rho * sim.particle_volume;
+    #endif
     sim.Np = 1;
     sim.particles = Particles(sim.Np);
 
@@ -75,7 +80,12 @@ TEST(BoundaryTest, AnalyticSLIPSTICK) {
 
     sim.dx = 0.001;
     sim.particle_volume = std::pow(sim.dx, sim.dim);
-    sim.particle_mass = sim.rho * sim.particle_volume;
+    #ifdef MULTIMATERIAL
+        for(int p = 0; p < sim.Np; p++)
+            sim.particles.mass = sim.rho;
+    #else
+        sim.particle_mass = sim.rho * sim.particle_volume;
+    #endif
     sim.Np = 1;
     sim.particles = Particles(sim.Np);
 

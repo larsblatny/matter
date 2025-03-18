@@ -27,7 +27,9 @@
 
         sim.dx = std::cbrt(ppc / T(square_samples.size()) * Lx*Ly*Lz);
         sim.particle_volume = sim.dx * sim.dx * sim.dx / ppc; // = Lx*Ly*Lz / T(square_samples.size())
-        sim.particle_mass = sim.rho * sim.particle_volume;
+        #ifndef MULTIMATERIAL
+            sim.particle_mass = sim.rho * sim.particle_volume;
+        #endif
 
         debug("    dx set to ", sim.dx);
 
@@ -89,8 +91,9 @@
 
         sim.dx = std::sqrt(ppc / T(square_samples.size()) * Lx*Ly);
         sim.particle_volume = sim.dx * sim.dx / ppc; // = Lx*Ly / T(square_samples.size())
-        sim.particle_mass = sim.rho * sim.particle_volume;
-
+        #ifndef MULTIMATERIAL
+            sim.particle_mass = sim.rho * sim.particle_volume;
+        #endif
         debug("    dx set to ", sim.dx);
 
         /////// Quadratic Gate

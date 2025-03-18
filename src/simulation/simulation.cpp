@@ -150,7 +150,9 @@ void Simulation::simulate(){
     debug("Elastic wave speed:  ", wave_speed);
     debug("Maximum dt:          ", dt_max);
     debug("Particle volume:     ", particle_volume);
+  #ifndef MULTIMATERIAL
     debug("Particle mass:       ", particle_mass);
+  #endif
 
     // nonlocal_l_sq = nonlocal_l * nonlocal_l;
     // nonlocal_support = std::ceil(nonlocal_l / dx);
@@ -311,7 +313,11 @@ void Simulation::checkMomentumConservation(){
 
     TV momentum_particle = TV::Zero();
     for(int p=0; p<Np; p++){
-        momentum_particle += particle_mass * particles.v[p];
+        #ifdef MULTIMATERIAL
+            momentum_particle += particles.mass[p] * particles.v[p];
+        #else
+            momentum_particle += particle_mass * particles.v[p];
+        #endif
     }
     debug("               Total part momentum = ", momentum_grid.norm());
     debug("               Total grid momentum = ", momentum_particle.norm());
@@ -324,7 +330,13 @@ void Simulation::checkMomentumConservation(){
 }
 
 void Simulation::checkMassConservation(){
-    T particle_mass_total = particle_mass*Np;
+    #ifdef MULTIMATERIAL
+        T particle_mass_total = 0.0;
+        for (int p = 0; p < Np; p++)
+            particle_mass_total += particles.mass[p]
+    #else
+        T particle_mass_total = particle_mass*Np;
+    #endif
     T grid_mass_total = 0;
     for(auto&& m: grid.mass)
         grid_mass_total += m;
