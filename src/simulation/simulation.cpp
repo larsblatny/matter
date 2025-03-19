@@ -1,6 +1,7 @@
 // Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
 
 #include "simulation.hpp"
+#include "../tools.hpp"
 
 Simulation::Simulation(){
     current_time_step = 0;
@@ -111,9 +112,10 @@ void Simulation::simulate(){
     lambda = nu * E / ( (1.0 + nu) * (1.0 - 2.0*nu) ); // first Lame parameter
     mu = E / (2.0*(1.0+nu)); // shear modulus
     K = calculateBulkModulus(); // bulk modulus
-    wave_speed = std::sqrt(E/rho); // elastic wave speed
-
-    dt_max = cfl_elastic * dx / wave_speed;
+    #ifndef MULTIMATERIAL
+        wave_speed = std::sqrt(E/rho); // elastic wave speed
+        dt_max = cfl_elastic * dx / wave_speed;
+    #endif
 
     frame_dt = 1.0 / fps;
 
@@ -333,7 +335,7 @@ void Simulation::checkMassConservation(){
     #ifdef MULTIMATERIAL
         T particle_mass_total = 0.0;
         for (int p = 0; p < Np; p++)
-            particle_mass_total += particles.mass[p]
+            particle_mass_total += particles.mass[p];
     #else
         T particle_mass_total = particle_mass*Np;
     #endif

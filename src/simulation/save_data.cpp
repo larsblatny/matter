@@ -81,6 +81,17 @@ void Simulation::saveParticleData(std::string extra){
         0);
     #endif
 
+    #ifdef MULTIMATERIAL
+        file.add_properties_to_element(
+        "vertex",
+        { "m" },
+        type,
+        particles.mass.size(),
+        reinterpret_cast<uint8_t*>(particles.mass.data()),
+        tinyply::Type::INVALID,
+        0);
+    #endif
+
         file.add_properties_to_element(
         "vertex",
         { "p" },

@@ -1,6 +1,7 @@
 // Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
 
 #include "simulation.hpp"
+#include "../tools.hpp"
 #include <omp.h>
 
 void Simulation::P2G(){

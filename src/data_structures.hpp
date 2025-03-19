@@ -27,7 +27,6 @@ public:
       
       #ifdef MULTIMATERIAL
       mass.resize(Np);  std::fill( mass.begin(), mass.end(), 0.0 );
-      E.resize(Np);     std::fill( E.begin(),    E.end()   , 0.0 );
       #endif
   }
 
@@ -50,7 +49,6 @@ public:
   
   #ifdef MULTIMATERIAL
   std::vector<T> mass;
-  std::vector<T> E;
   #endif
 
 };

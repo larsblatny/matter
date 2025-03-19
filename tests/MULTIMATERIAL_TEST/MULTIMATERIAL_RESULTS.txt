@@ -1,0 +1,119 @@
+
+Test at time : 2025-03-19 17:44:00.461036
+======================================================================
+|| Without MULTIMATERIAL | Measured simulation time :     1 s       ||
+||                       | Simulation took 819 milliseconds         ||
+||                       | Runtime P2G     = 111.001 milliseconds   ||
+||                       | Runtime G2P     = 409.25 milliseconds    ||
+||                       | Runtime Euler   = 153.473 milliseconds   ||
+||                       | Runtime DefGrad = 111.64 milliseconds    ||
+|| --------------------- | ---------------------------------------- ||
+|| With MULTIMATERIAL    | Measured simulation time :    25 s       ||
+||                       | Simulation took 25349 milliseconds       ||
+||                       | Runtime P2G     = 3471.892 milliseconds  ||
+||                       | Runtime G2P     = 12287.023 milliseconds ||
+||                       | Runtime Euler   = 4918.57 milliseconds   ||
+||                       | Runtime DefGrad = 3708.743 milliseconds  ||
+======================================================================
+
+Test at time : 2025-03-19 17:56:40.998672
+======================================================================
+|| Without MULTIMATERIAL | Measured simulation time :     1 s       ||
+||                       | Simulation took 823 milliseconds         ||
+||                       | Runtime P2G     = 110.447 milliseconds   ||
+||                       | Runtime G2P     = 411.745 milliseconds   ||
+||                       | Runtime Euler   = 149.984 milliseconds   ||
+||                       | Runtime DefGrad = 114.352 milliseconds   ||
+|| --------------------- | ---------------------------------------- ||
+|| With MULTIMATERIAL    | Measured simulation time :     6 s       ||
+||                       | Simulation took 6338 milliseconds        ||
+||                       | Runtime P2G     = 113.485 milliseconds   ||
+||                       | Runtime G2P     = 5920.352 milliseconds  ||
+||                       | Runtime Euler   = 153.159 milliseconds   ||
+||                       | Runtime DefGrad = 114.234 milliseconds   ||
+======================================================================
+
+Test at time : 2025-03-19 17:57:32.641274
+======================================================================
+|| Without MULTIMATERIAL | Measured simulation time :    31 s       ||
+||                       | Simulation took 30533 milliseconds       ||
+||                       | Runtime P2G     = 3880.446 milliseconds  ||
+||                       | Runtime G2P     = 15381.764 milliseconds ||
+||                       | Runtime Euler   = 5801.802 milliseconds  ||
+||                       | Runtime DefGrad = 4272.134 milliseconds  ||
+|| --------------------- | ---------------------------------------- ||
+|| With MULTIMATERIAL    | Measured simulation time :    30 s       ||
+||                       | Simulation took 30268 milliseconds       ||
+||                       | Runtime P2G     = 4023.409 milliseconds  ||
+||                       | Runtime G2P     = 14701.997 milliseconds ||
+||                       | Runtime Euler   = 5989.821 milliseconds  ||
+||                       | Runtime DefGrad = 4334.086 milliseconds  ||
+======================================================================
+
+Test at time : 2025-03-19 18:00:31.806329
+======================================================================
+|| Without MULTIMATERIAL | Measured simulation time :    15 s       ||
+||                       | Simulation took 14720 milliseconds       ||
+||                       | Runtime P2G     = 1739.605 milliseconds  ||
+||                       | Runtime G2P     = 7594.75 milliseconds   ||
+||                       | Runtime Euler   = 2747.925 milliseconds  ||
+||                       | Runtime DefGrad = 2072.775 milliseconds  ||
+|| --------------------- | ---------------------------------------- ||
+|| With MULTIMATERIAL    | Measured simulation time :    14 s       ||
+||                       | Simulation took 14335 milliseconds       ||
+||                       | Runtime P2G     = 1769.251 milliseconds  ||
+||                       | Runtime G2P     = 7157.742 milliseconds  ||
+||                       | Runtime Euler   = 2734.64 milliseconds   ||
+||                       | Runtime DefGrad = 2112.41 milliseconds   ||
+======================================================================
+
+Test at time : 2025-03-19 18:10:10.371628
+======================================================================
+|| Without MULTIMATERIAL | Measured simulation time :    15 s       ||
+||                       | Simulation took 14737 milliseconds       ||
+||                       | Runtime P2G     = 1752.353 milliseconds  ||
+||                       | Runtime G2P     = 7631.173 milliseconds  ||
+||                       | Runtime Euler   = 2670.172 milliseconds  ||
+||                       | Runtime DefGrad = 2108.578 milliseconds  ||
+|| --------------------- | ---------------------------------------- ||
+|| With MULTIMATERIAL    | Measured simulation time :    16 s       ||
+||                       | Simulation took 16186 milliseconds       ||
+||                       | Runtime P2G     = 1992.353 milliseconds  ||
+||                       | Runtime G2P     = 8091.865 milliseconds  ||
+||                       | Runtime Euler   = 3073.69 milliseconds   ||
+||                       | Runtime DefGrad = 2389.665 milliseconds  ||
+======================================================================
+
+Test at time : 2025-03-19 18:16:43.990430
+======================================================================
+|| Without MULTIMATERIAL | Measured simulation time :    10 s       ||
+||                       | Simulation took 9558 milliseconds        ||
+||                       | Runtime P2G     = 1266.904 milliseconds  ||
+||                       | Runtime G2P     = 4848.348 milliseconds  ||
+||                       | Runtime Euler   = 1760.391 milliseconds  ||
+||                       | Runtime DefGrad = 1333.969 milliseconds  ||
+|| --------------------- | ---------------------------------------- ||
+|| With MULTIMATERIAL    | Measured simulation time :    13 s       ||
+||                       | Simulation took 13237 milliseconds       ||
+||                       | Runtime P2G     = 1797.799 milliseconds  ||
+||                       | Runtime G2P     = 6448.525 milliseconds  ||
+||                       | Runtime Euler   = 2572.403 milliseconds  ||
+||                       | Runtime DefGrad = 1923.065 milliseconds  ||
+======================================================================
+
+Test at time : 2025-03-19 18:20:27.637567
+======================================================================
+|| Without MULTIMATERIAL | Measured simulation time :    10 s       ||
+||                       | Simulation took 9539 milliseconds        ||
+||                       | Runtime P2G     = 1254.084 milliseconds  ||
+||                       | Runtime G2P     = 4855.925 milliseconds  ||
+||                       | Runtime Euler   = 1751.6 milliseconds    ||
+||                       | Runtime DefGrad = 1332.898 milliseconds  ||
+|| --------------------- | ---------------------------------------- ||
+|| With MULTIMATERIAL    | Measured simulation time :    13 s       ||
+||                       | Simulation took 13231 milliseconds       ||
+||                       | Runtime P2G     = 1791.332 milliseconds  ||
+||                       | Runtime G2P     = 6427.247 milliseconds  ||
+||                       | Runtime Euler   = 2543.31 milliseconds   ||
+||                       | Runtime DefGrad = 1982.608 milliseconds  ||
+======================================================================

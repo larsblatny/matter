@@ -75,9 +75,7 @@ public:
   PlasticModel plastic_model = NoPlasticity;
   HardeningLaw hardening_law = ExpoImpl;
 
-#ifndef MULTIMATERIAL
   T E = 1e6; // Young's modulus (3D)
-#endif
   T nu = 0.3; // Poisson's ratio (3D)
 
   bool use_pradhana = true;
@@ -109,6 +107,12 @@ public:
   T mu_2 = std::tan(32.8*M_PI/180.0);;
 
   T stress_tolerance = 1e-5;
+  
+  // Making wave_speed public to declare it in mpm.cpp when MULTIMATERIAL
+  #ifdef MULTIMATERIAL
+      T wave_speed;
+      T dt_max;
+  #endif
 
   // Objects
   std::vector<ObjectPlate> plates;
@@ -188,8 +192,10 @@ private:
   T final_time;
   T frame_dt;
   T dt;
-  T dt_max;
-  T wave_speed;
+  #ifndef MULTIMATERIAL
+      T wave_speed;
+      T dt_max;
+  #endif
 
   TV gravity_final;
 
