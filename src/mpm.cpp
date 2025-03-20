@@ -22,7 +22,7 @@ int main(int argc, char *argv[]){
     sim.initialize(/*save to file*/ true, /*path*/ "output/", /*name*/ argv[1]);
 
     sim.save_grid = true;
-    sim.end_frame = 10;     // last frame to simulate
+    sim.end_frame = 20;     // last frame to simulate
     sim.fps = 10;           // frames per second
     sim.n_threads = 22;      // number of threads in parallel
     sim.cfl = 0.5;          // CFL constant, typically around 0.5
@@ -38,7 +38,7 @@ int main(int argc, char *argv[]){
     ////// INITIAL PARTICLE POSITIONS
     sim.Lx = 1;
     sim.Ly = 1;
-    T k_rad = 0.03;
+    T k_rad = 0.01;
     #ifdef THREEDIM
         sim.Lz = 5;
     #endif
@@ -59,7 +59,7 @@ int main(int argc, char *argv[]){
     sim.E = 1e6;     // Young's modulus (Pa)
     sim.nu = 0.3;   // Poisson's ratio (-)
     #ifdef MULTIMATERIAL
-        T rho1 = 500;
+        T rho1 = 1000;
         T rho2 = 1000;
         for(int p = 0; p < sim.Np; p++){
             if (sim.particles.x[p](0) > 0.0)

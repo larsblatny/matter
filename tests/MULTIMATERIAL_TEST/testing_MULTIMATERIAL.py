@@ -87,14 +87,14 @@ export_file = "MULTIMATERIAL_RESULTS.txt"
 with open(export_file, 'a') as file:
     file.write("\n")
     file.write("Test at time : %s\n" % date)
-    file.write("======================================================================\n")
-    file.write("|| Without MULTIMATERIAL | Measured simulation time : %5.0f s       ||\n"%Dt0)
+    file.write("=========================================================================\n")
+    file.write("|| Without MULTIMATERIAL | Measured simulation time : %5.0f s          ||\n"%Dt0)
     for line in output_buffer_0:
-        file.write("||                       | %-40s ||\n"%line[:-1])
-    file.write("|| --------------------- | ---------------------------------------- ||\n")
-    file.write("|| With MULTIMATERIAL    | Measured simulation time : %5.0f s       ||\n"%Dt1)
+        file.write("||                       | %-43s ||\n"%line[:-1])
+    file.write("|| --------------------- | ------------------------------------------- ||\n")
+    file.write("|| With MULTIMATERIAL    | Measured simulation time : %5.0f s          ||\n"%Dt1)
     for line in output_buffer_1:
-        file.write("||                       | %-40s ||\n"%line[:-1])
-    file.write("======================================================================\n")
+        file.write("||                       | %-43s ||\n"%line[:-1])
+    file.write("=========================================================================\n")
 
 
