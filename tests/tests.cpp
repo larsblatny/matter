@@ -7,6 +7,7 @@
 #include "../src/sampling/sampling_particles.hpp"
 
 #include "../src/objects/object_curve.hpp"
+#include "../src/objects/object_ground.hpp"
 
 
 TEST(BoundaryTest, AnalyticSLIPFREE) {
@@ -19,7 +20,7 @@ TEST(BoundaryTest, AnalyticSLIPFREE) {
     sim.end_frame = half_rounds*num_frames_in_half_round;
     sim.fps = num_frames_in_half_round / 0.5949238427;
 
-    sim.n_threads = 8;
+    sim.n_threads = 1;
     sim.cfl = 0.5;
     sim.flip_ratio = -0.95;
 
@@ -66,7 +67,7 @@ TEST(BoundaryTest, AnalyticSLIPSTICK) {
     sim.end_frame = half_rounds*num_frames_in_half_round;
     sim.fps = num_frames_in_half_round / 0.5949238427;
 
-    sim.n_threads = 8;
+    sim.n_threads = 1;
     sim.cfl = 0.5;
     sim.flip_ratio = -0.95;
 
@@ -101,6 +102,214 @@ TEST(BoundaryTest, AnalyticSLIPSTICK) {
     T diff = std::abs(v_sim-v_true)/v_true;
     ASSERT_NEAR(diff, 0.0, 1e-3);
 }
+
+TEST(CoulombFrictionTest, PlateSLIPFREE) {
+
+    Simulation sim;
+    sim.initialize(false);
+
+    sim.end_frame = 5;
+    sim.fps = 1;
+    sim.n_threads = 1;
+    sim.cfl = 0.5;
+    sim.flip_ratio = -0.95;
+
+    T theta_deg = 24;
+    T theta = theta_deg * M_PI / 180;
+    sim.gravity = TV::Zero();
+    sim.gravity[0] = +9.81 * std::sin(theta);
+    sim.gravity[1] = -9.81 * std::cos(theta);
+
+    sim.elastic_model = Hencky;
+    sim.plastic_model = NoPlasticity;
+    sim.E = 1e6; 
+    sim.nu = 0.3; 
+    sim.rho = 1000; 
+
+    sim.Lx = 0.1;
+    sim.Ly = 0.05;
+    T k_rad = 0.005;
+    sampleParticles(sim, k_rad);
+    for(int p = 0; p < sim.Np; p++){
+        sim.particles.x[p](0) -= 0.5*sim.Lx;
+        sim.particles.x[p](1) += 0.5*sim.dx;
+    }
+    sim.grid_reference_point = TV::Zero();
+
+    T friction = std::tan(15.0 * M_PI / 180.0);
+
+    ObjectPlate ground = ObjectPlate(0, bottom, SLIPFREE, friction); 
+    sim.plates.push_back(ground);
+
+    sim.simulate();
+
+    T mean_sim_x;
+    for(int p = 0; p < sim.Np; p++)
+        mean_sim_x += sim.particles.x[p](0);
+    mean_sim_x /= (T)sim.Np;
+
+    T final_time = (T)sim.end_frame / sim.fps;
+    T mean_true_x = 0.5*9.81*final_time*final_time*(std::sin(theta) - friction*std::cos(theta));
+    T diff = std::abs(mean_sim_x-mean_true_x) / mean_true_x;
+    ASSERT_NEAR(diff, 0.0, 1e-3);
+}
+
+TEST(CoulombFrictionTest, PlateSLIPSTICK) {
+
+    Simulation sim;
+    sim.initialize(false);
+
+    sim.end_frame = 5;
+    sim.fps = 1;
+    sim.n_threads = 1;
+    sim.cfl = 0.5;
+    sim.flip_ratio = -0.95;
+
+    T theta_deg = 24;
+    T theta = theta_deg * M_PI / 180;
+    sim.gravity = TV::Zero();
+    sim.gravity[0] = +9.81 * std::sin(theta);
+    sim.gravity[1] = -9.81 * std::cos(theta);
+
+    sim.elastic_model = Hencky;
+    sim.plastic_model = NoPlasticity;
+    sim.E = 1e6; 
+    sim.nu = 0.3; 
+    sim.rho = 1000; 
+
+    sim.Lx = 0.1;
+    sim.Ly = 0.05;
+    T k_rad = 0.005;
+    sampleParticles(sim, k_rad);
+    for(int p = 0; p < sim.Np; p++){
+        sim.particles.x[p](0) -= 0.5*sim.Lx;
+        sim.particles.x[p](1) += 0.5*sim.dx;
+    }
+    sim.grid_reference_point = TV::Zero();
+
+    T friction = std::tan(15.0 * M_PI / 180.0);
+
+    ObjectPlate ground = ObjectPlate(0, bottom, SLIPSTICK, friction); 
+    sim.plates.push_back(ground);
+
+    sim.simulate();
+
+    T mean_sim_x;
+    for(int p = 0; p < sim.Np; p++)
+        mean_sim_x += sim.particles.x[p](0);
+    mean_sim_x /= (T)sim.Np;
+
+    T final_time = (T)sim.end_frame / sim.fps;
+    T mean_true_x = 0.5*9.81*final_time*final_time*(std::sin(theta) - friction*std::cos(theta));
+    T diff = std::abs(mean_sim_x-mean_true_x) / mean_true_x;
+    ASSERT_NEAR(diff, 0.0, 1e-3);
+}
+
+
+
+TEST(CoulombFrictionTest, GeneralSLIPFREE) {
+
+    Simulation sim;
+    sim.initialize(false);
+
+    sim.end_frame = 5;
+    sim.fps = 1;
+    sim.n_threads = 1;
+    sim.cfl = 0.5;
+    sim.flip_ratio = -0.95;
+
+    T theta_deg = 24;
+    T theta = theta_deg * M_PI / 180;
+    sim.gravity = TV::Zero();
+    sim.gravity[0] = +9.81 * std::sin(theta);
+    sim.gravity[1] = -9.81 * std::cos(theta);
+
+    sim.elastic_model = Hencky;
+    sim.plastic_model = NoPlasticity;
+    sim.E = 1e6; 
+    sim.nu = 0.3; 
+    sim.rho = 1000; 
+
+    sim.Lx = 0.1;
+    sim.Ly = 0.05;
+    T k_rad = 0.005;
+    sampleParticles(sim, k_rad);
+    for(int p = 0; p < sim.Np; p++){
+        sim.particles.x[p](0) -= 0.5*sim.Lx;
+        sim.particles.x[p](1) += 0.5*sim.dx;
+    }
+    sim.grid_reference_point = TV::Zero();
+
+    T friction = std::tan(15.0 * M_PI / 180.0);
+
+    ObjectGround ground = ObjectGround(SLIPFREE, friction); 
+    sim.objects.push_back(&ground);
+
+    sim.simulate();
+
+    T mean_sim_x;
+    for(int p = 0; p < sim.Np; p++)
+        mean_sim_x += sim.particles.x[p](0);
+    mean_sim_x /= (T)sim.Np;
+
+    T final_time = (T)sim.end_frame / sim.fps;
+    T mean_true_x = 0.5*9.81*final_time*final_time*(std::sin(theta) - friction*std::cos(theta));
+    T diff = std::abs(mean_sim_x-mean_true_x) / mean_true_x;
+    ASSERT_NEAR(diff, 0.0, 1e-3);
+}
+
+TEST(CoulombFrictionTest, GeneralSLIPSTICK) {
+
+    Simulation sim;
+    sim.initialize(false);
+
+    sim.end_frame = 5;
+    sim.fps = 1;
+    sim.n_threads = 1;
+    sim.cfl = 0.5;
+    sim.flip_ratio = -0.95;
+
+    T theta_deg = 24;
+    T theta = theta_deg * M_PI / 180;
+    sim.gravity = TV::Zero();
+    sim.gravity[0] = +9.81 * std::sin(theta);
+    sim.gravity[1] = -9.81 * std::cos(theta);
+
+    sim.elastic_model = Hencky;
+    sim.plastic_model = NoPlasticity;
+    sim.E = 1e6; 
+    sim.nu = 0.3; 
+    sim.rho = 1000; 
+
+    sim.Lx = 0.1;
+    sim.Ly = 0.05;
+    T k_rad = 0.005;
+    sampleParticles(sim, k_rad);
+    for(int p = 0; p < sim.Np; p++){
+        sim.particles.x[p](0) -= 0.5*sim.Lx;
+        sim.particles.x[p](1) += 0.5*sim.dx;
+    }
+    sim.grid_reference_point = TV::Zero();
+
+    T friction = std::tan(15.0 * M_PI / 180.0);
+
+    ObjectGround ground = ObjectGround(SLIPSTICK, friction); 
+    sim.objects.push_back(&ground);
+
+    sim.simulate();
+
+    T mean_sim_x;
+    for(int p = 0; p < sim.Np; p++)
+        mean_sim_x += sim.particles.x[p](0);
+    mean_sim_x /= (T)sim.Np;
+
+    T final_time = (T)sim.end_frame / sim.fps;
+    T mean_true_x = 0.5*9.81*final_time*final_time*(std::sin(theta) - friction*std::cos(theta));
+    T diff = std::abs(mean_sim_x-mean_true_x) / mean_true_x;
+    ASSERT_NEAR(diff, 0.0, 1e-3);
+}
+
+
 
 
 TEST(BoundaryTest, MIBF) {

@@ -16,11 +16,9 @@
 #include "../data_structures.hpp"
 #include "../timer.hpp"
 
-#include "../objects/object_plate.hpp"
 #include "../objects/object_general.hpp"
-#include "../objects/object_bump.hpp"
-#include "../objects/object_gate.hpp"
-#include "../objects/object_ramp.hpp"
+#include "../objects/object_plate.hpp"
+
 
 class Simulation{
 public:

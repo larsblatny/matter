@@ -7,7 +7,6 @@
 
 class ObjectCurve : public ObjectGeneral {
 public:
-    T height;
 
     ~ObjectCurve(){}
 
