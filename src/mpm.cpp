@@ -3,19 +3,11 @@
 #include "tools.hpp"
 #include "simulation/simulation.hpp"
 #include "sampling/sampling_particles.hpp"
-
-#include "objects/object_bump.hpp"
-#include "objects/object_gate.hpp"
-#include "objects/object_ramp.hpp"
 #include "objects/object_plate.hpp"
 
-// Comment if not compiling with OpenVDB:
-// #include "objects/object_vdb.hpp"
-// #include "sampling/sampling_particles_vdb.hpp"
 
 
 int main(){
-    // openvdb::initialize(); // Comment if not using openvdb
 
     Simulation sim;
 
@@ -41,36 +33,6 @@ int main(){
     sim.gravity[0] = +9.81 * std::sin(theta);
     sim.gravity[1] = -9.81 * std::cos(theta);
 
-    ////// INITIAL PARTICLE POSITIONS
-    sim.Lx = 1;
-    sim.Ly = 1;
-    T k_rad = 0.01;
-    #ifdef THREEDIM
-        sim.Lz = 5;
-    #endif
-    sampleParticles(sim, k_rad);
-
-    ////// OPTIONAL: CHANGE INITIAL PARTICLE POSITIONS
-    for(int p = 0; p < sim.Np; p++){
-        sim.particles.x[p](0) -= 0.5*sim.Lx;
-        sim.particles.x[p](1) += 0.5*sim.dx;
-    }
-    sim.grid_reference_point = TV::Zero();
-
-    ////// OPTIONAL: INITIAL PARTICLE VELOCITIES
-    // sim.particles.v = ...
-
-    ////// OBJECTS AND TERRAINS
-    sim.plates.push_back(std::make_unique<ObjectPlate>(0, PlateType::bottom, BC::NoSlip)); 
-
-    /////// Here are some examples how to use the objects derived from ObjectGeneral:
-    // T friction = 0.2; 
-    // sim.objects.push_back(std::make_unique<ObjectBump>(BC::SlipFree, friction));
-    // sim.objects.push_back(std::make_unique<ObjectGate>(BC::SlipFree, friction));
-
-    /////// Here is an example how to use ObjectVdb (uncomment includes and openvdb::initialize() above):
-    // sim.objects.push_back(std::make_unique<ObjectVdb>("../levelsets/vdb_file_name.vdb", BC::NoSlip, friction));
-
     ////// PLASTICITY
     sim.plastic_model = PlasticModel::DPVisc; // Perzyna model with Drucker_Prager yield surface
 
@@ -81,6 +43,103 @@ int main(){
     sim.q_cohesion = 0; // Yield surface's intercection of q-axis (in Pa), 0 is the cohesionless case
     sim.perzyna_exp = 1; // Exponent in Perzyna models
     sim.perzyna_visc = 0; // Viscous time parameter is Perzyna models
+
+    ////// INITIAL PARTICLE POSITIONS
+    sim.Lx = 1;
+    sim.Ly = 1;
+    T k_rad = 0.01;
+    #ifdef THREEDIM
+        sim.Lz = 0.1;
+    #endif
+    sampleParticles(sim, k_rad);
+
+    for(int p = 0; p < sim.Np; p++){
+        sim.particles.x[p](0) -= 0.5*sim.Lx;
+        #ifdef THREEDIM
+            sim.particles.x[p](2) -= 0.5*sim.Lz;
+        #endif
+    }
+
+    sim.grid_reference_point = TV::Zero();
+
+    ////// OBJECTS AND TERRAINS
+    sim.plates.push_back(std::make_unique<ObjectPlate>(0, PlateType::bottom, BC::NoSlip));
+    #ifdef THREEDIM
+        sim.plates.push_back(std::make_unique<ObjectPlate>(-0.5*sim.Lz, PlateType::back, BC::SlipFree));
+        sim.plates.push_back(std::make_unique<ObjectPlate>(0.5*sim.Lz, PlateType::front, BC::SlipFree));
+    #endif
+
+    ////// FIXED GRID
+    #ifdef THREEDIM
+        TV Lmin(-3, 0,-0.05);
+        TV Lmax(3,  1, 0.05);
+    #else
+        TV Lmin(-3, 0);
+        TV Lmax(3,  1);
+    #endif
+    sim.remeshFixed(1, Lmin, Lmax); 
+
+
+    /////////////////////////////////
+    /////////// DIMMMATER ///////////
+    /////////////////////////////////
+
+    T drag_constant = 2;
+    T material_diameter = 0.02;
+    sim.dim_drag_constant = (1.0/8.0) * drag_constant * M_PI * std::pow(material_diameter,2) * sim.rho;
+    sim.dim_vels_filepath = sim.directory + sim.sim_name + "/nodevels.txt";
+    sim.dim_drag_filepath = sim.directory + sim.sim_name + "/nodedrag.txt";
+    sim.dim_inds_filepath = sim.directory + sim.sim_name + "/nodeinds.txt";
+
+
+    ///// CREATE LIST OF COUPLING INDICES
+    std::vector<int> coupling_indices_temp;
+    for (int i = 0; i<sim.Nx; i++){
+        T xi = sim.grid.xc + i*sim.dx;
+        for (int j = 0; j<sim.Ny; j++){
+            T yi = sim.grid.yc + j*sim.dx;
+            #ifdef THREEDIM
+            for (int k = 0; k<sim.Nz; k++){
+                if (xi > 1 && yi < 0.25)
+                    coupling_indices_temp.push_back((i*sim.Ny + j) * sim.Nz + k);
+            }
+            #else
+                if (xi > 1 && yi < 0.25)
+                    coupling_indices_temp.push_back(i*sim.Ny+j);
+            #endif
+                
+        }
+    }
+
+    ////// SAVE COUPLING INDICES TO FILE
+    std::ofstream out_file(sim.dim_inds_filepath);
+        if (!out_file.is_open()) {
+            std::cerr << "Unable to save coupling inds" << std::endl;
+            return 0;
+        }
+        bool firstline = true;
+        for (const int& index : coupling_indices_temp){ 
+            if (!firstline){
+                out_file << "\n";
+            }
+            out_file << index;
+            firstline = false;
+        }
+    out_file.close();
+
+
+    // READ COUPLING INDICES FROM FILE (UNNECESSARY, EXAMPLE ONLY)
+    std::ifstream in_file(sim.dim_inds_filepath);
+    if (!in_file.is_open()) {
+        std::cerr << "Unable to open coupling indices" << std::endl;
+    }
+    int value;
+    while (in_file >> value) {
+        sim.coupling_indices.push_back(value);
+    }
+    in_file.close();
+
+    debug("Num of coupling inds = ", sim.coupling_indices.size());
 
     sim.simulate();
 

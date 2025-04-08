@@ -214,17 +214,27 @@ void Simulation::simulate(){
 void Simulation::advanceStep(){
     updateDt();
 
-    if (pbc){
-        if (current_time_step == 0)
-            remeshFixed(4);
-    }
-    else{
-        if (current_time_step == 0) {
-            remeshFixedInit(2,2,2);
-        } else {
-            remeshFixedCont();
+    #ifndef DIMMATTER
+        if (pbc){
+            if (current_time_step == 0){}
+                #ifdef THREEDIM
+                    TV Lmin(0,0,0);
+                    TV Lmax(sim.Lx, sim.Ly, sim.Lz);
+                #else
+                    TV Lmin(0,0);
+                    TV Lmax(sim.Lx, sim.Ly);
+                #endif
+                remeshFixed(4, Lmin, Lmax);
+            }
         }
-    }
+        else{
+            if (current_time_step == 0){
+                remeshFixedInit(2,2,2);
+            } else {
+                remeshFixedCont();
+            }
+        }
+    #endif
 
     if (pbc){
         PBCAddParticles(4);

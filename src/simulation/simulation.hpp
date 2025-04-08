@@ -107,6 +107,15 @@ public:
   // Prefactor for q in plasticity models
   T q_prefac  = 1.0 / std::sqrt(2.0); // q = factor * ||dev(tau)||
 
+  // DIMMatter
+  #ifdef DIMMATTER
+    T dim_drag_constant = 0.01; // = (1/8) * C_d * pi * d_g^2 * rho
+    std::string dim_vels_filepath;
+    std::string dim_drag_filepath;
+    std::string dim_inds_filepath;
+    std::vector<int> coupling_indices;
+  #endif
+
   // Objects
   std::vector<std::unique_ptr<ObjectPlate>> plates;
   std::vector<std::unique_ptr<ObjectGeneral>> objects;
@@ -124,7 +133,7 @@ public:
   void advanceStep();
   void updateDt();
   void resizeGrid();
-  void remeshFixed(unsigned int extra_nodes);
+  void remeshFixed(unsigned int extra_nodes, TV Lmin, TV Lmax);
   void remeshFixedInit(unsigned int sfx, unsigned int sfy, unsigned int sfz);
   void remeshFixedCont();
   void P2G();
@@ -147,6 +156,17 @@ public:
   T calculateBulkModulus();
   TM NeoHookeanPiola(TM & Fe);
   TM HenckyPiola(TM & Fe);
+
+  std::string sim_name;
+  std::string directory;
+
+  // Grid handling and remeshing
+  Grid grid;
+  unsigned int Nx, Ny;
+  #ifdef THREEDIM
+    unsigned int Nz;
+  #endif
+    unsigned int grid_nodes;
 
 private:
 
@@ -183,14 +203,6 @@ private:
   T one_over_dx;
   T one_over_dx_square;
   T apicDinverse;
-
-  // Grid handling and remeshing
-  Grid grid;
-  unsigned int Nx, Ny;
-#ifdef THREEDIM
-  unsigned int Nz;
-#endif
-  unsigned int grid_nodes;
 
 #ifdef THREEDIM
   inline unsigned int ind(unsigned int i, unsigned int j, unsigned int k){

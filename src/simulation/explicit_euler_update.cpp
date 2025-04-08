@@ -12,9 +12,50 @@ void Simulation::explicitEulerUpdate(){
 
     std::vector<TV> grid_force(grid_nodes, TV::Zero());
 
+    #ifdef DIMMATTER
+        std::vector<TV> grid_drag(grid_nodes, TV::Zero());
+
+        // Read DIM velocities at coupling indices from file
+        std::vector<TV> dim_v(coupling_indices.size(), TV::Zero());
+        std::ifstream in_file(dim_vels_filepath);
+        std::string line;
+        T value;
+        unsigned int pn = 0; // particle/node/index
+        unsigned int j;      // component (x, y or z)
+        if (in_file.is_open()){
+            while (std::getline(in_file, line)){
+                j = 0;
+                std::stringstream line_stream(line);
+                while (line_stream >> value){
+                    dim_v[pn](j) = value;
+                    j++;
+                }
+                pn++;
+            }
+        }
+        else {
+            std::cerr << "Unable to read DIM velocities " << std::endl;
+            exit = 1;
+            return;
+        }
+
+        if (coupling_indices.size() != pn){
+            debug("Number of coupling indices not matching number of DIM velocities!");
+            exit = 1;
+            return;
+        }
+
+
+    #endif
+
     #pragma omp parallel num_threads(n_threads)
     {
         std::vector<TV> grid_force_local(grid_nodes, TV::Zero());
+
+
+        #ifdef DIMMATTER
+            std::vector<T> grid_drag_local(grid_nodes);
+        #endif
 
         #pragma omp for nowait
         for(int p = 0; p < Np; p++){
@@ -50,11 +91,17 @@ void Simulation::explicitEulerUpdate(){
                         T zi = grid.z[k];
                         if ( grid.mass[ind(i,j,k)] > 0){
                             grid_force_local[ind(i,j,k)] += tau * grad_wip(xp(0), xp(1), xp(2), xi, yi, zi, one_over_dx);
+                            #ifdef DIMMATTER
+                                grid_drag_local[ind(i,j,k)] += 1.0 / std::exp(particles.eps_pl_vol[p]) * wip(xp(0), xp(1), xp(2), xi, yi, zi, one_over_dx);
+                            #endif
                         } // end if non-zero grid mass
                     } // end for k
         #else
                     if ( grid.mass[ind(i,j)] > 0){
                         grid_force_local[ind(i,j)] += tau * grad_wip(xp(0), xp(1), xi, yi, one_over_dx);
+                        #ifdef DIMMATTER
+                            grid_drag_local[ind(i,j)] += 1.0 / std::exp(particles.eps_pl_vol[p]) * wip(xp(0), xp(1), xi, yi, one_over_dx);
+                        #endif
                     } // end if non-zero grid mass
         #endif
                  } // end for j
@@ -63,12 +110,54 @@ void Simulation::explicitEulerUpdate(){
 
         #pragma omp critical
         {
+
             for (int l = 0; l<grid_nodes; l++){
                 grid_force[l] += grid_force_local[l];
             } // end for l
+
+            #ifdef DIMMATTER
+                int c_index = 0;
+                for (const int& index : coupling_indices){ //  grid_drag at other indices will be zero
+
+                    TV vel_diff = grid.v[index] - dim_v[c_index];
+                    c_index++;
+
+                    //// Choose one:
+                    vel_diff = vel_diff.cwiseAbs(); // element-wise absolute value of velocity difference; 
+                    // vel_diff = vel_diff.array().square(); // element-wise square of velocity difference; 
+
+                    grid_drag[index] += grid_drag_local[index] * dim_drag_constant * vel_diff;
+
+                } // end loop over coupling indices
+            #endif
+
         } // end omp critical
 
     } // end omp parallel
+
+    #ifdef DIMMATTER
+        // Write drag force to file
+        std::ofstream out_file(dim_drag_filepath);
+        if (!out_file.is_open()) {
+            std::cerr << "Unable to save drag force" << std::endl;
+            exit = 1;
+            return;
+        }
+        bool firstline = true;
+        for (const int& index : coupling_indices){ 
+            if (!firstline){
+                out_file << "\n";
+            }
+            TV f = grid_drag[index];
+            #ifdef THREEDIM
+                out_file << f(0) << " " << f(1) << " " << f(2);
+            #else
+                out_file << f(0) << " " << f(1);
+            #endif
+            firstline = false;
+        }
+        out_file.close();
+    #endif
 
     //////////// if external grid gravity: //////////////////
     // std::pair<TMX, TMX> external_gravity_pair = createExternalGridGravity();
@@ -90,6 +179,10 @@ void Simulation::explicitEulerUpdate(){
                 if (mi > 0){
 
                     TV velocity_increment = -dt_particle_volume * grid_force[index] / mi + dt_gravity;
+
+                    #ifdef DIMMATTER
+                        velocity_increment += dt * grid_drag[index] / mi;
+                    #endif
 
                     //////////// if external grid gravity: //////////////////
                     // T external_gravity = external_gravity_pair.first(i,j);

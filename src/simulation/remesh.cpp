@@ -10,13 +10,13 @@ void Simulation::resizeGrid(){
         grid.friction.resize(grid_nodes); std::fill( grid.friction.begin(), grid.friction.end(), 0.0 );
 }
 
-// A fixed grid - must hard-coded for every simulation
-void Simulation::remeshFixed(unsigned int extra_nodes){
+void Simulation::remeshFixed(unsigned int extra_nodes, TV Lmin, TV Lmax){
+    // A fixed grid - must hard-coded for every simulation
 
-    grid.x = arange(-dx*(1+extra_nodes), Lx+(2+extra_nodes)*dx, dx);
-    grid.y = arange(-dx,                 Ly+(2+extra_nodes)*dx, dx);
+    grid.x = arange(Lmin(0)-dx*(1+extra_nodes), Lmax(0)+(2+extra_nodes)*dx, dx);
+    grid.y = arange(Lmin(1)-dx,                 Lmax(1)+(2+extra_nodes)*dx, dx);
     #ifdef THREEDIM
-        grid.z = arange(-dx*(1+extra_nodes), Lz+(2+extra_nodes)*dx, dx);
+        grid.z = arange(Lmin(2)-dx*(1+extra_nodes), Lmax(2)+(2+extra_nodes)*dx, dx);
     #endif
 
     grid.xc = grid.x[0];
