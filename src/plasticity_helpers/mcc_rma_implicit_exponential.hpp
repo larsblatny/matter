@@ -5,7 +5,7 @@
 
 #include "../tools.hpp"
 
-bool MCCRMAImplicitExponential(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T rma_prefac, T epv)
+bool MCCRMAImplicitExponential(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T f_mu_prefac, T epv)
 {
     T p0 = std::max(T(1e-2), p00 * std::exp(-xi*epv));
     // T y = M * M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
@@ -34,8 +34,8 @@ bool MCCRMAImplicitExponential(T& p, T& q, int& exit, T M, T p00, T beta, T mu, 
             // T dydq   = 2*q * (2*beta+1);
             T dydq   = 2*q;
 
-            T r1 = pt - p - K             * delta_gamma * dydp;
-            T r2 = qt - q - rma_prefac*mu * delta_gamma * dydq;
+            T r1 = pt - p - K           * delta_gamma * dydp;
+            T r2 = qt - q - f_mu_prefac * delta_gamma * dydq;
 
             if ( iter > 4 && std::abs(y) < 1e-3 && std::abs(r1) < 1e-3 && std::abs(r2) < 1e-3 ){
                 break;
@@ -60,11 +60,11 @@ bool MCCRMAImplicitExponential(T& p, T& q, int& exit, T M, T p00, T beta, T mu, 
                 }
             }
 
-            T J11 = -1 - K            *delta_gamma*ddydpp;
+            T J11 = -1 - K          *delta_gamma*ddydpp;
             T J13 = -K*dydp;
 
-            T J22 = -1 - rma_prefac*mu*delta_gamma*ddydqq;
-            T J23 = -rma_prefac*mu*dydq;
+            T J22 = -1 - f_mu_prefac*delta_gamma*ddydqq;
+            T J23 =     -f_mu_prefac*dydq;
 
             T J31 = dydp;
             T J32 = dydq;

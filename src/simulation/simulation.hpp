@@ -177,7 +177,6 @@ private:
   T d_prefac;    // gamma    = factor * ||dev(eps)||
   T e_mu_prefac; // q        = factor * ||dev(eps)||
   T f_mu_prefac; // q^tr - q = factor * dt * gamma_dot
-  T rma_prefac;
 
   // Precomputations
   T one_over_dx;

@@ -5,7 +5,7 @@
 
 #include "../tools.hpp"
 
-bool MCCRMAExplicitOnevar(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T rma_prefac)
+bool MCCRMAExplicitOnevar(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K)
 /**
  **** WRITTEN BY TOBIAS VERHEIJEN ****
  *
@@ -17,7 +17,6 @@ bool MCCRMAExplicitOnevar(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T
  * @param beta: Cohesion parameter
  * @param mu: G = Lame parameter
  * @param K: Bulk modulus, (lambda + 2*mu/dim)
- * @param rma_prefac: precomputed value, either 2*sqrt(3) or 1. depending on using von_mises_q or not
  * @return true if deformation is plastic, false if deformation is not plastic
  */
 {

@@ -415,20 +415,20 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T p_c;
             if (hardening_law == HardeningLaw::ExpoExpl){ // Exponential Explicit Hardening
                 p_c = std::max(stress_tolerance, p0 * std::exp(-xi*particles.eps_pl_vol[p]));
-                   perform_rma =       MCCRMAExplicit(p_stress, q_stress, exit, mu_1, p_c, beta, mu, K, rma_prefac);
-                // perform_rma = MCCRMAExplicitOnevar(p_stress, q_stress, exit, mu_1, p_c, beta, mu, K, rma_prefac);
+                   perform_rma =       MCCRMAExplicit(p_stress, q_stress, exit, mu_1, p_c, beta, mu, K, f_mu_prefac);
+                // perform_rma = MCCRMAExplicitOnevar(p_stress, q_stress, exit, mu_1, p_c, beta, mu, K);
             }
             else if (hardening_law == HardeningLaw::SinhExpl){ // Sinh Explicit Hardening
                 p_c = std::max(stress_tolerance, K * std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(p0/K)));
-                   perform_rma =       MCCRMAExplicit(p_stress, q_stress, exit, mu_1, p_c, beta, mu, K, rma_prefac);
-                // perform_rma = MCCRMAExplicitOnevar(p_stress, q_stress, exit, mu_1, p_c, beta, mu, K, rma_prefac);
+                   perform_rma =       MCCRMAExplicit(p_stress, q_stress, exit, mu_1, p_c, beta, mu, K, f_mu_prefac);
+                // perform_rma = MCCRMAExplicitOnevar(p_stress, q_stress, exit, mu_1, p_c, beta, mu, K);
             }
             else if (hardening_law == HardeningLaw::ExpoImpl){ // Exponential Implicit Hardening
-                   perform_rma = MCCRMAImplicitExponentialOnevar(p_stress, q_stress, exit, mu_1, p0, beta, mu, K, xi, rma_prefac, particles.eps_pl_vol[p]);
-                // perform_rma =       MCCRMAImplicitExponential(p_stress, q_stress, exit, mu_1, p0, beta, mu, K, xi, rma_prefac, particles.eps_pl_vol[p]);
+                   perform_rma = MCCRMAImplicitExponentialOnevar(p_stress, q_stress, exit, mu_1, p0, beta, mu, K, xi, particles.eps_pl_vol[p]);
+                // perform_rma =       MCCRMAImplicitExponential(p_stress, q_stress, exit, mu_1, p0, beta, mu, K, xi, f_mu_prefac, particles.eps_pl_vol[p]);
             }
             else if (hardening_law == HardeningLaw::SinhImpl) {
-                   perform_rma = MCCRMAImplicitSinhOnevar(p_stress, q_stress, exit, mu_1, p0, beta, mu, K, xi, rma_prefac, particles.eps_pl_vol[p]);
+                   perform_rma = MCCRMAImplicitSinhOnevar(p_stress, q_stress, exit, mu_1, p0, beta, mu, K, xi, particles.eps_pl_vol[p]);
                 // perform_rma = <no alternative at the moment>
             }
             else{
@@ -501,25 +501,25 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             bool perform_rma;
             T p_c;
             if (hardening_law == HardeningLaw::NoHard){ // Exponential Explicit Hardening
-                   perform_rma =       MCCRMAExplicit(p_stress, q_stress, exit, M, p0, beta, mu, K, rma_prefac);
-                // perform_rma = MCCRMAExplicitOnevar(p_stress, q_stress, exit, M, p0, beta, mu, K, rma_prefac);
+                   perform_rma =       MCCRMAExplicit(p_stress, q_stress, exit, M, p0, beta, mu, K, f_mu_prefac);
+                // perform_rma = MCCRMAExplicitOnevar(p_stress, q_stress, exit, M, p0, beta, mu, K);
             }
             else if (hardening_law == HardeningLaw::ExpoExpl){ // Exponential Explicit Hardening
                 p_c = std::max(stress_tolerance, p0*std::exp(-xi*particles.eps_pl_vol[p]));
-                   perform_rma =       MCCRMAExplicit(p_stress, q_stress, exit, M, p_c, beta, mu, K, rma_prefac);
-                // perform_rma = MCCRMAExplicitOnevar(p_stress, q_stress, exit, M, p_c, beta, mu, K, rma_prefac);
+                   perform_rma =       MCCRMAExplicit(p_stress, q_stress, exit, M, p_c, beta, mu, K, f_mu_prefac);
+                // perform_rma = MCCRMAExplicitOnevar(p_stress, q_stress, exit, M, p_c, beta, mu, K);
             }
             else if (hardening_law == HardeningLaw::SinhExpl){ // Sinh Explicit Hardening
                 p_c = std::max(stress_tolerance, K*std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(p0/K)));
-                   perform_rma =       MCCRMAExplicit(p_stress, q_stress, exit, M, p_c, beta, mu, K, rma_prefac);
-                // perform_rma = MCCRMAExplicitOnevar(p_stress, q_stress, exit, M, p_c, beta, mu, K, rma_prefac);
+                   perform_rma =       MCCRMAExplicit(p_stress, q_stress, exit, M, p_c, beta, mu, K, f_mu_prefac);
+                // perform_rma = MCCRMAExplicitOnevar(p_stress, q_stress, exit, M, p_c, beta, mu, K);
             }
             else if (hardening_law == HardeningLaw::ExpoImpl){ // Exponential Implicit Hardening
-                   perform_rma = MCCRMAImplicitExponentialOnevar(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, rma_prefac, particles.eps_pl_vol[p]);
-                // perform_rma =       MCCRMAImplicitExponential(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, rma_prefac, particles.eps_pl_vol[p]);
+                   perform_rma = MCCRMAImplicitExponentialOnevar(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, particles.eps_pl_vol[p]);
+                // perform_rma =       MCCRMAImplicitExponential(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, f_mu_prefac, particles.eps_pl_vol[p]);
             }
             else if (hardening_law == HardeningLaw::SinhImpl) {
-                perform_rma = MCCRMAImplicitSinhOnevar(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, rma_prefac, particles.eps_pl_vol[p]);
+                perform_rma = MCCRMAImplicitSinhOnevar(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, particles.eps_pl_vol[p]);
             }
             else{
                 debug("You specified an invalid HARDENING LAW!");

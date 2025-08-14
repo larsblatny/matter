@@ -123,15 +123,13 @@ void Simulation::simulate(){
 
     if (use_mises_q){
         q_prefac = std::sqrt(3.0)/std::sqrt(2.0);
-        d_prefac = std::sqrt(2.0)/std::sqrt(3.0);
     } 
     else {
         q_prefac = 1.0 / std::sqrt(2.0);
-        d_prefac = std::sqrt(2.0);
     }
-    e_mu_prefac = 2*q_prefac          * mu;
-    f_mu_prefac = 2*q_prefac/d_prefac * mu;
-    rma_prefac  = 2*q_prefac*q_prefac;
+    d_prefac = 1 / q_prefac;
+    e_mu_prefac = 2*q_prefac            * mu;
+    f_mu_prefac = 2*q_prefac * q_prefac * mu;
 
     fac_Q = I_ref / (grain_diameter*std::sqrt(rho_s));
 

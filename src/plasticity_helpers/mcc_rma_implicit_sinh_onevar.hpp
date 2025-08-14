@@ -6,7 +6,7 @@
 #include "../tools.hpp"
 #include "limited_search_sinh.hpp"
 
-bool MCCRMAImplicitSinhOnevar(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T rma_prefac, T epv)
+bool MCCRMAImplicitSinhOnevar(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T epv)
 /**
  **** WRITTEN BY TOBIAS VERHEIJEN ****
  *
@@ -30,7 +30,6 @@ bool MCCRMAImplicitSinhOnevar(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T
  * @param K: Bulk modulus, (lambda + 2*mu/dim)
  * @param xi: xi value for simulation
  * @param epv: Plastic Volumetric Hencky Strain
- * @param rma_prefac: precomputed value, either 2*sqrt(3) or 1. depending on using von_mises_q or not respectively
  * @return true if deformation is plastic, false if deformation is not plastic
  */
 {
