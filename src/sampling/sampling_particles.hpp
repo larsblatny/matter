@@ -122,7 +122,7 @@
 
     } // end sampleParticles
 
-#endif // DIMENSION
+#endif 
 
 
 #endif  // SAMPLING_PARTICLES_HPP

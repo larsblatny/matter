@@ -83,13 +83,16 @@ void Simulation::simulate(){
         return;
     }
 
-    #if DIMENSION == 3
+    if (dim == 3){
         debug("This is a 3D simulation.");
-    #elif DIMENSION == 2
+    }
+    else if (dim == 2){
         debug("This is a 2D simulation.");
-    #else
-        #error Unsupported spline degree
-    #endif
+    }
+    else{
+        debug("Unsupported spline degree");
+        return;
+    }
 
     #if SPLINEDEG == 3
       apicDinverse = 3.0/(dx*dx);
