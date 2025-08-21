@@ -75,7 +75,7 @@ int main(){
     sim.plastic_model = PlasticModel::DPVisc; // Perzyna model with Drucker_Prager yield surface
 
     sim.use_pradhana = true; // Supress unwanted volume expansion in Drucker-Prager models
-    sim.use_mises_q = false; // [default: false] if true, q is defined as q = sqrt(3/2 * s:s), otherwise q = sqrt(1/2 * s:s)
+    sim.q_prefac = 1.0 / std::sqrt(2.0); // [default: sqrt(1/2)] Prefactor in def. of q, here q = sqrt(1/2 * s:s)
 
     sim.M = std::tan(30*M_PI/180.0); // Internal friction
     sim.q_cohesion = 0; // Yield surface's intercection of q-axis (in Pa), 0 is the cohesionless case
