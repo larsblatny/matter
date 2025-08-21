@@ -208,7 +208,6 @@ This is a non-exhaustive list of parameters and options (of the `Simulation` cla
 | `reduce_verbose`  | false | Reduce writing to screen
 | `use_musl`        | false | Use MUSL instead of USL
 | `use_mibf`        | false | Use Material-Induced Boundary Friction (MIBF), only relevant for certain plasticity models
-| `use_mises_q`     | false | If `true` define the "equivalent shear stress" q as the von Mises equivalent stress q = sqrt(3/2 s:s), otherwise q = sqrt(1/2 s:s). 
 | `pbc`             | false | Use periodic boundary conditions in $x$-direction bounded by `Lx`
 | `Lx`, `Ly`, `Lz`  | 1.0    | The material sample space used in `sampleParticles(...)`. Not needed when sampling from VDB.
 | `grid_reference_point` | - | Optionally provide a point to be considered in the initial adaptive grid creation, otherwise it only considers the particle domain
@@ -216,6 +215,7 @@ This is a non-exhaustive list of parameters and options (of the `Simulation` cla
 | `plastic_model`        | PlasticModel::NoPlasticity | Plastic model. Parameters are set according to the model used, see below.
 | `E`                    | 1e6            | The 3D Young's modulus (Pa)
 | `nu`                   | 0.3            | The 3D Poisson's ratio (-)
+| `q_prefac` | sqrt(1/2) | Prefactor used in definition of q, default is q = sqrt(1/2 s:s). 
 
 
 Here is a list of the various plastic models and their parameters:

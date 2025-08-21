@@ -75,7 +75,6 @@ public:
   PlasticModel plastic_model = PlasticModel::NoPlasticity;
   HardeningLaw hardening_law = HardeningLaw::ExpoImpl;
   bool use_pradhana = true;
-  bool use_mises_q = false;
   T E = 1e6; // Young's modulus (3D)
   T nu = 0.3; // Poisson's ratio (3D)
   T stress_tolerance = 1e-5;
@@ -104,6 +103,9 @@ public:
   T I_ref = 0.279;
   T mu_1 = std::tan(20.9*M_PI/180.0);
   T mu_2 = std::tan(32.8*M_PI/180.0);;
+
+  // Prefactor for q in plasticity models
+  T q_prefac  = 1.0 / std::sqrt(2.0); // q = factor * ||dev(tau)||
 
   // Objects
   std::vector<std::unique_ptr<ObjectPlate>> plates;
@@ -173,7 +175,6 @@ private:
   T fac_Q; // for mu(I) rheology
 
   // Prefactors for plasticity models
-  T q_prefac;    // q        = factor * ||dev(tau)||
   T d_prefac;    // gamma    = factor * ||dev(eps)||
   T e_mu_prefac; // q        = factor * ||dev(eps)||
   T f_mu_prefac; // q^tr - q = factor * dt * gamma_dot
