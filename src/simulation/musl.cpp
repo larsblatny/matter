@@ -10,7 +10,7 @@ void Simulation::MUSL(){
     #endif
 
 
-    #pragma omp parallel for num_threads(n_threads)
+    #pragma omp parallel for schedule(static) num_threads(n_threads)
     for(int p=0; p<Np; p++){
 
         //// Velicity is updated
@@ -31,7 +31,7 @@ void Simulation::MUSL(){
     {
         std::vector<TV> grid_v_local(grid_nodes, TV::Zero() );
 
-        #pragma omp for
+        #pragma omp for nowait
         for(int p = 0; p < Np; p++){
             TV xp = particles.x[p];
             unsigned int i_base = std::max(0, int(std::floor((xp(0)-grid.xc)*one_over_dx)) - 1); // i_base = std::min(i_base, Nx-4); // the subtraction of one is valid for both quadratic and cubic splines

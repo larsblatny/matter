@@ -20,7 +20,7 @@ void Simulation::G2P(){
         std::vector<TV> particles_flip_local(Np); std::fill( particles_flip_local.begin(), particles_flip_local.end(), TV::Zero() );
         std::vector<TM> particles_Bmat_local(Np); std::fill( particles_Bmat_local.begin(), particles_Bmat_local.end(), TM::Zero() );
 
-        #pragma omp for
+        #pragma omp for nowait
         for(int p = 0; p < Np; p++){
             TV xp = particles.x[p];
             TV vp    = TV::Zero();
