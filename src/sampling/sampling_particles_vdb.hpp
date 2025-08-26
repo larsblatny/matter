@@ -14,7 +14,7 @@ template <typename S>
 void sampleParticlesFromVdb(S& sim, ObjectVdb& obj, T kRadius, T ppc = 8)
 #else // TWODIM
 void sampleParticlesFromVdb(S& sim, ObjectVdb& obj, T kRadius, T ppc = 6)
-#endif // DIMENSION
+#endif
 {
 
     debug("Sampling particles from VDB...");
@@ -38,6 +38,9 @@ void sampleParticlesFromVdb(S& sim, ObjectVdb& obj, T kRadius, T ppc = 6)
         sim.particle_volume = sim.dx * sim.dx * sim.dx / ppc;
         sim.particle_mass = sim.rho * sim.particle_volume;
 
+        sim.Lx = L(0);
+        sim.Ly = L(1);
+        sim.Lz = L(2);
     #else // TWODIM
         debug("    Min corner: ", min_corner(0), ", ", min_corner(1));
         debug("    Max corner: ", max_corner(0), ", ", max_corner(1));
@@ -49,7 +52,10 @@ void sampleParticlesFromVdb(S& sim, ObjectVdb& obj, T kRadius, T ppc = 6)
         sim.dx = std::sqrt(ppc / T(square_samples.size()) * L(0)*L(1));
         sim.particle_volume = sim.dx * sim.dx / ppc;
         sim.particle_mass = sim.rho * sim.particle_volume;
-    #endif // DIMENSION
+
+        sim.Lx = L(0);
+        sim.Ly = L(1);
+    #endif
 
     debug("    Number of square samples: ", square_samples.size());
     debug("    dx set to ", sim.dx);
@@ -61,7 +67,7 @@ void sampleParticlesFromVdb(S& sim, ObjectVdb& obj, T kRadius, T ppc = 6)
             TV point(square_samples[p][0], square_samples[p][1], square_samples[p][2]);
         #else // TWODIM
             TV point(square_samples[p][0], square_samples[p][1]);
-        #endif // DIMENSION
+        #endif
 
         if ( obj.inside(point) ){
             samples.push_back(point);

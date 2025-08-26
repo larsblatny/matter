@@ -5,7 +5,7 @@
 
 #include "../tools.hpp"
 
-bool MCCRMAExplicit(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T rma_prefac)
+bool MCCRMAExplicit(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T f_mu_prefac)
 {
     // T y = M * M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
     T y = M * M * (p - p0) * (p + beta * p0) + (q * q);
@@ -30,8 +30,8 @@ bool MCCRMAExplicit(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T rma_p
             // T l = 2*q * (2*beta+1);
             T l = 2*q;
 
-            T r1 = pt - p - K             * delta_gamma * k;
-            T r2 = qt - q - rma_prefac*mu * delta_gamma * l;
+            T r1 = pt - p - K           * delta_gamma * k;
+            T r2 = qt - q - f_mu_prefac * delta_gamma * l;
 
             if ( iter > 4 && std::abs(y) < 1e-3 && std::abs(r1) < 1e-3 && std::abs(r2) < 1e-3 ){
                 break;
@@ -57,11 +57,11 @@ bool MCCRMAExplicit(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T rma_p
                 }
             }
 
-            T J11 = -1 - K            *delta_gamma*dkdp;
+            T J11 = -1 - K          *delta_gamma*dkdp;
             T J13 = -K*k;
 
-            T J22 = -1 - rma_prefac*mu*delta_gamma*dldq;
-            T J23 = -rma_prefac*mu*l;
+            T J22 = -1 - f_mu_prefac*delta_gamma*dldq;
+            T J23 =     -f_mu_prefac*l;
 
             T J31 = k;
             T J32 = l;

@@ -16,7 +16,7 @@ void Simulation::explicitEulerUpdate(){
     {
         std::vector<TV> grid_force_local(grid_nodes, TV::Zero());
 
-        #pragma omp for
+        #pragma omp for nowait
         for(int p = 0; p < Np; p++){
 
             TM Fe = particles.F[p];

@@ -83,13 +83,16 @@ void Simulation::simulate(){
         return;
     }
 
-    #if DIMENSION == 3
+    if (dim == 3){
         debug("This is a 3D simulation.");
-    #elif DIMENSION == 2
+    }
+    else if (dim == 2){
         debug("This is a 2D simulation.");
-    #else
-        #error Unsupported spline degree
-    #endif
+    }
+    else{
+        debug("Unsupported spline degree");
+        return;
+    }
 
     #if SPLINEDEG == 3
       apicDinverse = 3.0/(dx*dx);
@@ -121,17 +124,9 @@ void Simulation::simulate(){
     one_over_dx = 1.0 / dx;
     one_over_dx_square = one_over_dx * one_over_dx;
 
-    if (use_mises_q){
-        q_prefac = std::sqrt(3.0)/std::sqrt(2.0);
-        d_prefac = std::sqrt(2.0)/std::sqrt(3.0);
-    } 
-    else {
-        q_prefac = 1.0 / std::sqrt(2.0);
-        d_prefac = std::sqrt(2.0);
-    }
-    e_mu_prefac = 2*q_prefac          * mu;
-    f_mu_prefac = 2*q_prefac/d_prefac * mu;
-    rma_prefac  = 2*q_prefac*q_prefac;
+    d_prefac = 1 / q_prefac;
+    e_mu_prefac = 2*q_prefac            * mu;
+    f_mu_prefac = 2*q_prefac * q_prefac * mu;
 
     fac_Q = I_ref / (grain_diameter*std::sqrt(rho_s));
 

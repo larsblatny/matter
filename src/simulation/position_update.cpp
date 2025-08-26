@@ -5,7 +5,7 @@
 
 void Simulation::positionUpdate(){
 
-    #pragma omp parallel for num_threads(n_threads)
+    #pragma omp parallel for schedule(static) num_threads(n_threads)
     for(int p=0; p<Np; p++){
 
         //// Position is updated according to PIC velocities

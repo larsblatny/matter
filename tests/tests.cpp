@@ -346,8 +346,7 @@ TEST(BoundaryTest, MIBF) {
     sim_one.plastic_model = PlasticModel::DPVisc; 
 
     sim_one.use_pradhana = false; 
-    sim_one.use_mises_q = false;
-    sim_one.use_mibf = false;          // NB
+    sim_one.use_mibf = false;       // NB
 
     sim_one.M = friction;
     sim_one.q_cohesion = 0;
@@ -398,8 +397,7 @@ TEST(BoundaryTest, MIBF) {
     sim_two.plastic_model = PlasticModel::DPVisc; 
 
     sim_two.use_pradhana = false; 
-    sim_two.use_mises_q = false;
-    sim_two.use_mibf = true;          // NB       
+    sim_two.use_mibf = true;       // NB       
 
     sim_two.M = friction;
     sim_two.q_cohesion = 0;
@@ -454,10 +452,11 @@ TEST(BoundaryTest, MIBF) {
     sim_three.plastic_model = PlasticModel::DPVisc; 
 
     sim_three.use_pradhana = false; 
-    sim_three.use_mises_q = true;        // NB
-    sim_three.use_mibf = false;          // NB
+    sim_three.use_mibf = false;                // NB
+    sim_three.q_prefac = std::sqrt(3.0/2.0);   // NB
 
-    sim_three.M = std::sqrt(3.0)*friction; // NB
+
+    sim_three.M = std::sqrt(3.0)*friction;     // NB
     sim_three.q_cohesion = 0;
     sim_three.perzyna_exp = 1;
     sim_three.perzyna_visc = 0;
@@ -641,7 +640,6 @@ TEST(CollapseTest, DruckerPragerOne) {
     sim.elastic_model = ElasticModel::Hencky;
     sim.plastic_model = PlasticModel::DPSoft;
 
-    sim.use_mises_q = false;
     sim.use_pradhana = true;
 
     sim.xi = 0;
@@ -707,7 +705,6 @@ TEST(CollapseTest, DruckerPragerTwo) {
     sim.elastic_model = ElasticModel::Hencky;
     sim.plastic_model = PlasticModel::DPVisc;
 
-    sim.use_mises_q = false;
     sim.use_pradhana = true;
 
     sim.perzyna_visc = 0;
