@@ -46,7 +46,7 @@ int main(){
     sim.Ly = 1;
     T k_rad = 0.01;
     #ifdef THREEDIM
-        sim.Lz = 5;
+        sim.Lz = 0.1;
     #endif
     sampleParticles(sim, k_rad);
 
@@ -54,22 +54,15 @@ int main(){
     for(int p = 0; p < sim.Np; p++){
         sim.particles.x[p](0) -= 0.5*sim.Lx;
         sim.particles.x[p](1) += 0.5*sim.dx;
+        #ifdef THREEDIM
+            sim.particles.x[p](2) -= 0.5*sim.Lz;
+        #endif
     }
     sim.grid_reference_point = TV::Zero();
 
-    ////// OPTIONAL: INITIAL PARTICLE VELOCITIES
-    // sim.particles.v = ...
 
     ////// OBJECTS AND TERRAINS
     sim.plates.push_back(std::make_unique<ObjectPlate>(0, PlateType::bottom, BC::NoSlip)); 
-
-    /////// Here are some examples how to use the objects derived from ObjectGeneral:
-    // T friction = 0.2; 
-    // sim.objects.push_back(std::make_unique<ObjectBump>(BC::SlipFree, friction));
-    // sim.objects.push_back(std::make_unique<ObjectGate>(BC::SlipFree, friction));
-
-    /////// Here is an example how to use ObjectVdb (uncomment includes and openvdb::initialize() above):
-    // sim.objects.push_back(std::make_unique<ObjectVdb>("../levelsets/vdb_file_name.vdb", BC::NoSlip, friction));
 
     ////// PLASTICITY
     sim.plastic_model = PlasticModel::DPVisc; // Perzyna model with Drucker_Prager yield surface
@@ -82,7 +75,70 @@ int main(){
     sim.perzyna_exp = 1; // Exponent in Perzyna models
     sim.perzyna_visc = 0; // Viscous time parameter is Perzyna models
 
-    sim.simulate();
 
+    ////// FIXED GRID
+    #ifdef THREEDIM
+        TV Lmin(-3, 0,-0.05);
+        TV Lmax(3,  1, 0.05);
+    #else
+        TV Lmin(-3, 0);
+        TV Lmax(3,  1);
+    #endif
+    sim.remeshFixed(1, Lmin, Lmax); 
+
+    sim.dim_vels_filepath = sim.directory + sim.sim_name + "/nodevels.txt";
+    sim.dim_drag_filepath = sim.directory + sim.sim_name + "/nodedrag.txt";
+    sim.dim_inds_filepath = sim.directory + sim.sim_name + "/nodeinds.txt";
+
+    ///// CREATE LIST OF COUPLING INDICES
+    std::vector<int> coupling_indices_temp;
+    for (int i = 0; i<sim.Nx; i++){
+        T xi = sim.grid.xc + i*sim.dx;
+        for (int j = 0; j<sim.Ny; j++){
+            T yi = sim.grid.yc + j*sim.dx;
+            #ifdef THREEDIM
+            for (int k = 0; k<sim.Nz; k++){
+                if (xi > 1 && yi < 0.25)
+                    coupling_indices_temp.push_back((i*sim.Ny + j) * sim.Nz + k);
+            }
+            #else
+                if (xi > 1 && yi < 0.25)
+                    coupling_indices_temp.push_back(i*sim.Ny+j);
+            #endif
+                
+        }
+    }
+
+    ////// SAVE COUPLING INDICES TO FILE
+    std::ofstream out_file(sim.dim_inds_filepath);
+        if (!out_file.is_open()) {
+            std::cerr << "Unable to save coupling inds" << std::endl;
+            return 0;
+        }
+        bool firstline = true;
+        for (const int& index : coupling_indices_temp){ 
+            if (!firstline){
+                out_file << "\n";
+            }
+            out_file << index;
+            firstline = false;
+        }
+    out_file.close();
+
+
+    // READ COUPLING INDICES FROM FILE (UNNECESSARY, EXAMPLE ONLY)
+    std::ifstream in_file(sim.dim_inds_filepath);
+        if (!in_file.is_open()) {
+            std::cerr << "Unable to open coupling indices" << std::endl;
+        }
+        int value;
+        while (in_file >> value) {
+            sim.coupling_indices.push_back(value);
+        }
+    in_file.close();
+
+    debug("Num of coupling inds = ", sim.coupling_indices.size());
+
+    sim.simulate();
 	return 0;
 }

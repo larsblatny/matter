@@ -124,7 +124,7 @@ public:
   void advanceStep();
   void updateDt();
   void resizeGrid();
-  void remeshFixed(unsigned int extra_nodes);
+  void remeshFixed(unsigned int extra_nodes, TV Lmin, TV Lmax);
   void remeshFixedInit(unsigned int sfx, unsigned int sfy, unsigned int sfz);
   void remeshFixedCont();
   void P2G();
@@ -148,6 +148,22 @@ public:
   TM NeoHookeanPiola(TM & Fe);
   TM HenckyPiola(TM & Fe);
 
+  std::string dim_vels_filepath;
+  std::string dim_drag_filepath;
+  std::string dim_inds_filepath;
+  std::vector<int> coupling_indices;
+
+  std::string sim_name;
+  std::string directory;
+
+  // Grid handling and remeshing
+  Grid grid;
+  unsigned int Nx, Ny;
+  #ifdef THREEDIM
+    unsigned int Nz;
+  #endif
+    unsigned int grid_nodes;
+
 private:
 
   unsigned int current_time_step = 0;
@@ -158,9 +174,6 @@ private:
   T runtime_euler = 0;
   T runtime_defgrad = 0;
   T runtime_total = 0;
-
-  std::string sim_name;
-  std::string directory;
 
   TV gravity_final;
 
@@ -183,14 +196,6 @@ private:
   T one_over_dx;
   T one_over_dx_square;
   T apicDinverse;
-
-  // Grid handling and remeshing
-  Grid grid;
-  unsigned int Nx, Ny;
-#ifdef THREEDIM
-  unsigned int Nz;
-#endif
-  unsigned int grid_nodes;
 
 #ifdef THREEDIM
   inline unsigned int ind(unsigned int i, unsigned int j, unsigned int k){

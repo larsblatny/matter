@@ -12,6 +12,51 @@ void Simulation::explicitEulerUpdate(){
 
     std::vector<TV> grid_force(grid_nodes, TV::Zero());
 
+
+    #ifdef DIMMATTER
+
+        std::vector<TV> grid_drag(grid_nodes, TV::Zero());
+
+        // Read drag force at coupling indices from file
+        std::vector<TV> dim_f(coupling_indices.size(), TV::Zero());
+        std::ifstream in_file(dim_drag_filepath);
+        std::string line;
+        T value;
+        unsigned int pn = 0; // particle/node/index
+        unsigned int j;      // component (x, y or z)
+        if (in_file.is_open()){
+            while (std::getline(in_file, line)){
+                j = 0;
+                std::stringstream line_stream(line);
+                while (line_stream >> value){
+                    dim_f[pn](j) = value;
+                    j++;
+                }
+                pn++;
+            }
+        }
+        else {
+            std::cerr << "Unable to read drag force " << std::endl;
+            exit = 1;
+            return;
+        }
+
+        if (coupling_indices.size() != pn){
+            debug("Number of coupling indices not matching number of drag force rows!");
+            exit = 1;
+            return;
+        }
+
+        int c_index = 0;
+        for (const int& index : coupling_indices){ // grid_drag at other indices will be zero
+            grid_drag[index] += dim_f[c_index];
+            c_index++;
+        } // end loop over coupling indices
+
+    #endif // DIMMATTER
+
+
+
     #pragma omp parallel num_threads(n_threads)
     {
         std::vector<TV> grid_force_local(grid_nodes, TV::Zero());
@@ -90,6 +135,10 @@ void Simulation::explicitEulerUpdate(){
                 if (mi > 0){
 
                     TV velocity_increment = -dt_particle_volume * grid_force[index] / mi + dt_gravity;
+
+                    #ifdef DIMMATTER
+                        velocity_increment -= dt * grid_drag[index] / mi;
+                    #endif
 
                     //////////// if external grid gravity: //////////////////
                     // T external_gravity = external_gravity_pair.first(i,j);

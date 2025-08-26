@@ -20,6 +20,7 @@ typedef double T; // float or double
 // #define THREEDIM // Uncomment for 2D
 #define SPLINEDEG 2 // Quadratic B-spline
 // #define WARNINGS // Write more debug info to screen
+#define DIMMATTER
 ///////////////////////////////////////////////////
 
 

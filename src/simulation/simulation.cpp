@@ -215,18 +215,6 @@ void Simulation::advanceStep(){
     updateDt();
 
     if (pbc){
-        if (current_time_step == 0)
-            remeshFixed(4);
-    }
-    else{
-        if (current_time_step == 0) {
-            remeshFixedInit(2,2,2);
-        } else {
-            remeshFixedCont();
-        }
-    }
-
-    if (pbc){
         PBCAddParticles(4);
     }
 
@@ -235,6 +223,40 @@ void Simulation::advanceStep(){
     timer t_p2g; t_p2g.start();
     P2G();
     t_p2g.stop(); runtime_p2g += t_p2g.get_timing();
+
+
+
+    #ifdef DIMMATTER
+
+        // Write velocities at coupling indices to file
+        std::ofstream out_file(dim_vels_filepath);
+        if (!out_file.is_open()) {
+            std::cerr << "Unable to save velocities" << std::endl;
+            exit = 1;
+            return;
+        }
+        bool firstline = true;
+        for (const int& index : coupling_indices){ 
+            if (!firstline){
+                out_file << "\n";
+            }
+            TV v = grid.v[index];
+            #ifdef THREEDIM
+                out_file << v(0) << " " << v(1) << " " << v(2);
+            #else
+                out_file << v(0) << " " << v(1);
+            #endif
+            firstline = false;
+        }
+        out_file.close();
+
+        // At this point, DIM will be calculating the drag force
+        // code should pause here while this is done
+        // before the drag force is read by Matter in explicitEulerUpdate
+
+    #endif // DIMMATTER
+
+
 
     // checkMassConservation();
     // checkMomentumConservation();
