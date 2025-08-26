@@ -110,10 +110,10 @@ public:
   // DIMMatter
   #ifdef DIMMATTER
     T dim_drag_constant = 0.01; // = (1/8) * C_d * pi * d_g^2 * rho
+    std::vector<int> coupling_indices;
     std::string dim_vels_filepath;
     std::string dim_drag_filepath;
     std::string dim_inds_filepath;
-    std::vector<int> coupling_indices;
   #endif
 
   // Objects
@@ -157,9 +157,6 @@ public:
   TM NeoHookeanPiola(TM & Fe);
   TM HenckyPiola(TM & Fe);
 
-  std::string sim_name;
-  std::string directory;
-
   // Grid handling and remeshing
   Grid grid;
   unsigned int Nx, Ny;
@@ -167,6 +164,9 @@ public:
     unsigned int Nz;
   #endif
     unsigned int grid_nodes;
+
+  std::string sim_name;
+  std::string directory;
 
 private:
 
@@ -178,9 +178,6 @@ private:
   T runtime_euler = 0;
   T runtime_defgrad = 0;
   T runtime_total = 0;
-
-  std::string sim_name;
-  std::string directory;
 
   TV gravity_final;
 
