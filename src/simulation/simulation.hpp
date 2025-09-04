@@ -49,6 +49,7 @@ public:
   TV grid_reference_point = 2e10 * TV::Ones();
   TV gravity = TV::Zero();
 
+  T min_dt = 1e-14;
   T fps = 1;
   T cfl = 0.5;
   T cfl_elastic = 0.5;

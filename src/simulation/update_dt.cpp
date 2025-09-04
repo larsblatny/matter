@@ -12,8 +12,7 @@ void Simulation::updateDt(){
     T max_speed = (*max_velocity_it).norm();
 
     if (max_speed >= wave_speed){
-        debug("               Detected particle speed ", max_speed, " larger than elastic wave speed ", wave_speed);
-        // exit = 1;
+        debug("               FYI the particle speed ", max_speed, " is larger than elastic wave speed ", wave_speed);
     }
 
 #ifdef WARNINGS
@@ -35,14 +34,15 @@ void Simulation::updateDt(){
 
     dt = std::min(dt, frame_dt*(frame+1) - time);
     dt = std::min(dt, final_time         - time);
+    dt = std::max(dt, min_dt);
 
 #ifdef WARNINGS
-    debug("               dt     = ", dt    );
+    debug("               dt     = ", dt);
 #endif
 
 
     // Here one may hard-code a special gravity evolution with time
-    // Default: linear gravity increase until "gravity_time"
+    // Example here: linear gravity increase until "gravity_time"
     if (gravity_special){
 
         if (time < gravity_time){
