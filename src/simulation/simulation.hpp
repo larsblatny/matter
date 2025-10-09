@@ -92,6 +92,9 @@ public:
   // Perzyna
   T perzyna_exp = 1;
   T perzyna_visc = 0;
+  
+  // Associative viscoplastic rule
+  T eta = 1.0; // 1.0 equivalent to no viscosity
 
   // MCC
   T beta = 0;
