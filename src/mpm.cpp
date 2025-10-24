@@ -44,9 +44,9 @@ int main(){
     ////// INITIAL PARTICLE POSITIONS
     sim.Lx = 1;
     sim.Ly = 1;
-    T k_rad = 0.01;
+    T k_rad = 0.02;
     #ifdef THREEDIM
-        sim.Lz = 0.1;
+        sim.Lz = 0.4;
     #endif
     sampleParticles(sim, k_rad);
 
@@ -64,6 +64,11 @@ int main(){
     ////// OBJECTS AND TERRAINS
     sim.plates.push_back(std::make_unique<ObjectPlate>(0, PlateType::bottom, BC::NoSlip)); 
 
+    #ifdef THREEDIM
+        sim.plates.push_back(std::make_unique<ObjectPlate>(-0.5*sim.Lz-sim.dx, PlateType::back, BC::SlipFree)); 
+        sim.plates.push_back(std::make_unique<ObjectPlate>( 0.5*sim.Lz+sim.dx, PlateType::front, BC::SlipFree)); 
+    #endif
+
     ////// PLASTICITY
     sim.plastic_model = PlasticModel::DPVisc; // Perzyna model with Drucker_Prager yield surface
 
@@ -78,11 +83,11 @@ int main(){
 
     ////// FIXED GRID
     #ifdef THREEDIM
-        TV Lmin(-3, 0,-0.05);
-        TV Lmax(3,  1, 0.05);
+        TV Lmin(-3, 0,              -0.5*sim.Lz-5*sim.dx);
+        TV Lmax(3,  sim.Ly+5*sim.dx, 0.5*sim.Lz+5*sim.dx);
     #else
         TV Lmin(-3, 0);
-        TV Lmax(3,  1);
+        TV Lmax(3,  sim.Ly+5*sim.dx);
     #endif
     sim.remeshFixed(1, Lmin, Lmax); 
 
