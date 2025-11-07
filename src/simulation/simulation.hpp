@@ -33,8 +33,8 @@ public:
   const unsigned int dim = 2;
 #endif
 
-  unsigned int n_threads = 1;
-  unsigned int end_frame = 1;
+  unsigned int n_threads = 1; // number of OMP threads
+  unsigned int end_frame = 1; // last frame in the simulation
 
   bool is_initialized = false;
   bool save_sim = true;
@@ -49,14 +49,14 @@ public:
   TV grid_reference_point = 2e10 * TV::Ones();
   TV gravity = TV::Zero();
 
-  T min_dt = 1e-14;
-  T fps = 1;
-  T cfl = 0.5;
-  T cfl_elastic = 0.5;
-  T flip_ratio = -0.95;
-  T rho = 1000;
-  T gravity_time = 0;
-  // bool no_liftoff = true;
+  T min_dt = 1e-14; // minimum dt, also used to check  end of frame, use with caution
+  T fps = 1; // frames per second
+  T cfl = 0.5; // classical CFL coefficient
+  T cfl_elastic = 0.5; // CFL-like coffefficient for elastic wave speed
+  T flip_ratio = -0.95; // [0,1]: PIC/FLIP where 1 is FLIP and 0 is PIC. [-1,0): APIC/AFLIP where -1 is AFLIP.
+  T rho = 1000; // density
+  T gravity_time = 0; // used if gravity_special = true
+  // bool no_liftoff = true; // can be used if gravity_special = true
   T Lx = 1;
   T Ly = 1;
 #ifdef THREEDIM
@@ -65,21 +65,21 @@ public:
 
   // Particle data
   Particles particles;
-  unsigned int Np;
-  unsigned int num_add_pbc_particles;
-  T particle_mass;
+  unsigned int Np; // number of particles
+  unsigned int num_add_pbc_particles; // used for periodic boundary conditions
+  T particle_mass;   // constant particle mass
   T particle_volume; // initial particle volume
-  T dx;
+  T dx; // grid cell size
 
   // Elastoplasticity
   ElasticModel elastic_model = ElasticModel::Hencky;
   PlasticModel plastic_model = PlasticModel::NoPlasticity;
   HardeningLaw hardening_law = HardeningLaw::ExpoImpl;
-  bool use_pradhana = true;
+  bool use_pradhana = true; // volume correction for Drucker-Prager-based models
   T E = 1e6; // Young's modulus (3D)
   T nu = 0.3; // Poisson's ratio (3D)
-  T stress_tolerance = 1e-5;
-  T xi = 0;
+  T stress_tolerance = 1e-5; // only used in some models
+  T xi = 0; // softening/hardening parameter
 
   // Von Mises:
   T q_max = 100;
@@ -153,6 +153,7 @@ private:
 
   unsigned int current_time_step = 0;
   unsigned int frame = 0;
+
   T time = 0;
   T runtime_p2g = 0;
   T runtime_g2p = 0;
@@ -160,20 +161,21 @@ private:
   T runtime_defgrad = 0;
   T runtime_total = 0;
 
-  std::string sim_name;
-  std::string directory;
-
-  TV gravity_final;
-
   T final_time;
   T frame_dt;
   T dt;
   T dt_max;
-  T wave_speed;
+
+  std::string sim_name;
+  std::string directory;
+ 
+  T wave_speed; // elastic wave speed
   T mu; // shear modulus
   T lambda; // first Lame parameter
   T K; // bulk modulus
   T fac_Q; // for mu(I) rheology
+
+  TV gravity_final; // used if gravity_special = true
 
   // Prefactors for plasticity models
   T d_prefac;    // gamma    = factor * ||dev(eps)||
@@ -195,11 +197,11 @@ private:
 
 #ifdef THREEDIM
   inline unsigned int ind(unsigned int i, unsigned int j, unsigned int k){
-    return (i*Ny + j) * Nz + k; // 3D
+    return (i*Ny + j) * Nz + k; 
   }
 #else
   inline unsigned int ind(unsigned int i, unsigned int j){
-      return (i*Ny + j); // 3D
+      return (i*Ny + j); 
   }
 #endif
 
@@ -230,7 +232,7 @@ inline TM Simulation::NeoHookeanPiola(TM & Fe){
 
 inline TM Simulation::HenckyPiola(TM & Fe){
     Eigen::JacobiSVD<TM> svd(Fe, Eigen::ComputeFullU | Eigen::ComputeFullV);
-    TA sigma = svd.singularValues().array(); // abs() for inverse also??
+    TA sigma = svd.singularValues().array(); 
     TM logSigma = sigma.abs().log().matrix().asDiagonal();
     TM invSigma = sigma.inverse().matrix().asDiagonal();
     TM dPsidF = svd.matrixU() * ( 2*mu*invSigma*logSigma + lambda*logSigma.trace()*invSigma ) * svd.matrixV().transpose();
