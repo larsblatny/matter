@@ -65,8 +65,9 @@ int main(){
     sim.p0 = 5.0e3;
     sim.beta = 0.0;
     sim.xi = 0.02;
-    sim.eta = 2.0; // Comment to remove viscosity and compare
-
+    
+    sim.eta = 5.0e3;
+    
     sim.simulate();
 
 	return 0;

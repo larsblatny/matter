@@ -631,17 +631,21 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
             bool perform_rma;
             T p_c;
-            T Delta_GAMMA = 0;
+            
+            T delta_gamma = 1;// Puting any value means "plastic_model == PlasticModel::MCCAssociative"
+            // plastic_model variable does not exist in mcc_rma_explicit.hpp
+            // This solution is softer than passing it as argument or making mcc_rma function a member of Simulation
+
             if (hardening_law == HardeningLaw::NoHard){ // Exponential Explicit Hardening
-                   perform_rma =       MCCRMAExplicit_MCCAssociative(p_yield, q_yield, Delta_GAMMA, exit, M, p0, beta, mu, K, f_mu_prefac);
+                   perform_rma =       MCCRMAExplicit(p_yield, q_yield, exit, M, p0, beta, mu, K, f_mu_prefac, &delta_gamma);
             }
             else if (hardening_law == HardeningLaw::ExpoExpl){ // Exponential Explicit Hardening
                 p_c = std::max(stress_tolerance, p0*std::exp(-xi*particles.eps_pl_vol[p]));
-                   perform_rma =       MCCRMAExplicit_MCCAssociative(p_yield, q_yield, Delta_GAMMA, exit, M, p_c, beta, mu, K, f_mu_prefac);
+                   perform_rma =       MCCRMAExplicit(p_yield, q_yield, exit, M, p_c, beta, mu, K, f_mu_prefac, &delta_gamma);
             }
             else if (hardening_law == HardeningLaw::SinhExpl){ // Sinh Explicit Hardening
                 p_c = std::max(stress_tolerance, K*std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(p0/K)));
-                   perform_rma =       MCCRMAExplicit_MCCAssociative(p_yield, q_yield, Delta_GAMMA, exit, M, p_c, beta, mu, K, f_mu_prefac);
+                   perform_rma =       MCCRMAExplicit(p_yield, q_yield, exit, M, p_c, beta, mu, K, f_mu_prefac, &delta_gamma);
             }
             else{
                 debug("You specified an invalid HARDENING LAW!");
@@ -652,16 +656,14 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             if (perform_rma) { // returns true if it performs a return mapping
                 T dydq_yield = 2 * q_yield;
                 T dydp_yield = M*M * (beta*p_c + 2*p_yield - p_c);
-
-                Delta_GAMMA = Delta_GAMMA / eta;
                 
-                T eps_dot_pl_vol_inst = - Delta_GAMMA * dydp_yield;
-                T eps_dot_pl_dev_inst = Delta_GAMMA * (1/d_prefac) * dydq_yield;
+                T eps_dot_pl_vol_inst = - delta_gamma * dydp_yield * dt / t_relax;
+                T eps_dot_pl_dev_inst = delta_gamma * (1/d_prefac) * dydq_yield * dt / t_relax;
                 
                 particles.eps_pl_vol[p] += eps_dot_pl_vol_inst;
                 particles.eps_pl_dev[p] += eps_dot_pl_dev_inst;
 
-                particles.delta_gamma[p] = Delta_GAMMA / dt;
+                particles.delta_gamma[p] = delta_gamma / dt;
 
                 T h_vol = - p_trial / K         - eps_dot_pl_vol_inst;
                 T h_dev = q_trial / e_mu_prefac - eps_dot_pl_dev_inst;
