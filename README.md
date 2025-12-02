@@ -291,7 +291,11 @@ In the MCC-based models, one must also choose a corresponding hardening law:
 _Matter_ is an open-source software licensed under _GNU General Public License v3.0_ (see LICENSE file).
 If you are interested in using Matter in commercial products or services, please do not hesitate to contact [Lars Blatny](https://larsblatny.github.io/) (lars.blatny [at] slf.ch).    
 
-Please attribute this software by citing this article: [doi:10.5194/egusphere-2025-1157](https://doi.org/10.5194/egusphere-2025-1157)    
+Please attribute this software by citing this article: 
 
-If you use the $\mu(I)$-rheology models, please cite this article: [doi:10.1017/jfm.2024.643](https://doi.org/10.1017/jfm.2024.643)    
+* Blatny, L. & Gaume, J. (2025). Matter (v1): an open-source MPM solver for granular matter, _Geoscientific Model Development_, 18, 9149–9166. [DOI: 10.5194/gmd-18-9149-2025](https://doi.org/10.5194/gmd-18-9149-2025).
+
+If you use the $\mu(I)$-rheology models, please also cite this article: 
+
+* Blatny, L., Gray, J.M.N.T., & Gaume, J. (2024). A critical state μ(I)-rheology model for cohesive granular flows. _Journal of Fluid Mechanics_, 997, A67. [DOI: 10.1017/jfm.2024.643](https://doi.org/10.1017/jfm.2024.643)    
 
