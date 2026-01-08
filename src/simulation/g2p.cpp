@@ -16,9 +16,6 @@ void Simulation::G2P(){
 
     #pragma omp parallel num_threads(n_threads)
     {
-        std::vector<TV> particles_pic_local(Np);  std::fill( particles_pic_local.begin(),  particles_pic_local.end(),  TV::Zero() );
-        std::vector<TV> particles_flip_local(Np); std::fill( particles_flip_local.begin(), particles_flip_local.end(), TV::Zero() );
-        std::vector<TM> particles_Bmat_local(Np); std::fill( particles_Bmat_local.begin(), particles_Bmat_local.end(), TM::Zero() );
 
         #pragma omp for nowait
         for(int p = 0; p < Np; p++){
@@ -67,27 +64,14 @@ void Simulation::G2P(){
         #endif
                 } // end loop j
             } // end loop i
-            particles_pic_local[p] = vp;
+            particles.pic[p] = vp;
             if (flip_ratio < 0){ // APIC
-                particles_Bmat_local[p] = Bp;
+                particles.Bmat[p] = Bp;
             }
             if (flip_ratio >= -1){ // PIC-FLIP or AFLIP
-                particles_flip_local[p] = flipp;
+                particles.flip[p] = flipp;
             }
         } // end loop p
-
-        #pragma omp critical
-        {
-            for(int p = 0; p < Np; p++){
-                particles.pic[p] += particles_pic_local[p];
-                if (flip_ratio < 0){ // APIC
-                    particles.Bmat[p] += particles_Bmat_local[p];
-                }
-                if (flip_ratio >= -1){ // PIC-FLIP or AFLIP
-                    particles.flip[p] += particles_flip_local[p];
-                }
-            }
-        } // end omp critical
 
     } // end omp paralell
 
