@@ -149,6 +149,18 @@ public:
   TM NeoHookeanPiola(TM & Fe);
   TM HenckyPiola(TM & Fe);
 
+  // Nonlocal functions and parameters:
+  void nonlocalP2G();
+  void nonlocalG2P();
+  void nonlocalProjection();
+  T nonlocal_l;
+  T nonlocal_l_sq;
+  unsigned int nonlocal_support;
+  T xi_nonloc;
+
+
+
+
 private:
 
   unsigned int current_time_step = 0;

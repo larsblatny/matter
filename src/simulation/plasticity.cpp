@@ -25,13 +25,12 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         if (hencky_deviatoric_norm > 0)
             hencky_deviatoric /= hencky_deviatoric_norm; // normalize the deviatoric vector so it gives a unit vector specifying the deviatoric direction
 
+         particles.Fe_trial[p] = Fe_trial;
 
         if (plastic_model == PlasticModel::VM){
 
-            T q_yield = q_max;
-
-            // If hardening law:
-            // q_yield = f(q_max, hardening variable) ....
+            // T q_yield = std::max( (T)1e-3, q_max + xi * particles.eps_pl_dev[p] + xi_nonloc * particles.eps_pl_dev_nonloc[p]);
+            T q_yield = std::max( (T)1e-3, particles.q_max[p] + xi * particles.eps_pl_dev[p] + xi_nonloc * particles.eps_pl_dev_nonloc[p]);
 
             T delta_gamma = hencky_deviatoric_norm - q_yield / e_mu_prefac; // this is eps_pl_dev_instant
 
@@ -39,9 +38,11 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 plastic_count++;
                 particles.delta_gamma[p] = d_prefac * delta_gamma / dt;
 
-                hencky -= delta_gamma * hencky_deviatoric;
-                particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
-                particles.eps_pl_dev[p] += delta_gamma;
+                ////// The following 3 lines are instead executed in nonlocalProjection:  ///////////////////
+                // hencky -= delta_gamma * hencky_deviatoric;
+                // particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
+                // particles.eps_pl_dev[p] += delta_gamma;
+                /////////////////////////////////////////////////////////////////////////////////////////////
 
             } // end plastic projection
 

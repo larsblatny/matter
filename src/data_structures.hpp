@@ -22,6 +22,11 @@ public:
 
       F.resize(Np); std::fill( F.begin(), F.end(), TM::Identity() );
       Bmat.resize(Np); std::fill( Bmat.begin(), Bmat.end(), TM::Zero() );
+
+      eps_pl_dev_nonloc.resize(Np);  std::fill( eps_pl_dev_nonloc.begin(),  eps_pl_dev_nonloc.end(),  0.0 );
+      delta_gamma_nonloc.resize(Np); std::fill( delta_gamma_nonloc.begin(), delta_gamma_nonloc.end(), 0.0 );
+      Fe_trial.resize(Np);           std::fill( Fe_trial.begin(),           Fe_trial.end(),    TM::Zero() );
+      q_max.resize(Np);              std::fill( q_max.begin(),              q_max.end(),              0.0 );
   }
 
   std::vector<TV> x;
@@ -39,6 +44,10 @@ public:
   std::vector<TM> F;
   std::vector<TM> Bmat;
 
+  std::vector<T> eps_pl_dev_nonloc;
+  std::vector<T> delta_gamma_nonloc;
+  std::vector<TM> Fe_trial;
+  std::vector<T> q_max;
 };
 
 class Grid{
@@ -53,6 +62,9 @@ public:
     std::vector<TV> flip;
     std::vector<T> mass;
     std::vector<T> friction;
+
+    std::vector<T> delta_gamma;
+
     T xc;
     T yc;
     #ifdef THREEDIM

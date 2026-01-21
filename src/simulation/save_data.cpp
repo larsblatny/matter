@@ -125,10 +125,28 @@ void Simulation::saveParticleData(std::string extra){
 
         file.add_properties_to_element(
             "vertex",
+            { "eps_pl_dev_nonloc" },
+            type,
+            particles.eps_pl_dev_nonloc.size(),
+            reinterpret_cast<uint8_t*>(particles.eps_pl_dev_nonloc.data()),
+            tinyply::Type::INVALID,
+            0);
+
+        file.add_properties_to_element(
+            "vertex",
             { "delta_gamma" },
             type,
             particles.delta_gamma.size(),
             reinterpret_cast<uint8_t*>(particles.delta_gamma.data()),
+            tinyply::Type::INVALID,
+            0);
+
+            file.add_properties_to_element(
+            "vertex",
+            { "delta_gamma_nonloc" },
+            type,
+            particles.delta_gamma_nonloc.size(),
+            reinterpret_cast<uint8_t*>(particles.delta_gamma_nonloc.data()),
             tinyply::Type::INVALID,
             0);
 
@@ -235,6 +253,15 @@ void Simulation::saveGridData(std::string extra){
         type,
         grid.mass.size(),
         reinterpret_cast<uint8_t*>(grid.mass.data()),
+        tinyply::Type::INVALID,
+        0);
+
+    file.add_properties_to_element(
+        "vertex",
+        { "delta_gamma" },
+        type,
+        grid.delta_gamma.size(),
+        reinterpret_cast<uint8_t*>(grid.delta_gamma.data()),
         tinyply::Type::INVALID,
         0);
 

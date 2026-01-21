@@ -16,6 +16,9 @@ add_executable(mpm
 			   simulation/position_update.cpp
 			   simulation/musl.cpp
 			   simulation/pbc.cpp
+			   simulation/nonlocal_projection.cpp
+			   simulation/nonlocal_p2g.cpp
+			   simulation/nonlocal_g2p.cpp
 			   )
 
 if (USE_VDB)

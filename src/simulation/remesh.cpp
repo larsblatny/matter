@@ -117,9 +117,9 @@ void Simulation::remeshFixedInit(unsigned int sfx, unsigned int sfy, unsigned in
 
     // safety_factor = 2 means we have a grid which has a grid point 2*dx from the boundary particle
     // Assuming a local approach, a grid point 2dx away from a particle will not influence this particle
-    unsigned int safety_factor_x = sfx;
-    unsigned int safety_factor_y = sfy;
-    unsigned int safety_factor_z = sfz;
+    unsigned int safety_factor_x = std::max(sfx, nonlocal_support);
+    unsigned int safety_factor_y = std::max(sfy, nonlocal_support);
+    unsigned int safety_factor_z = std::max(sfz, nonlocal_support);
 
     low_x_init    = min_x - dx * safety_factor_x;
     high_x_init   = max_x + dx * safety_factor_x;

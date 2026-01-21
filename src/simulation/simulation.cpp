@@ -130,6 +130,10 @@ void Simulation::simulate(){
 
     fac_Q = I_ref / (grain_diameter*std::sqrt(rho_s));
 
+    nonlocal_l_sq = nonlocal_l * nonlocal_l;
+    nonlocal_support = std::ceil(nonlocal_l / dx);
+
+
     if (use_mibf){
         if (plastic_model == PlasticModel::DPMui || plastic_model == PlasticModel::MCCMui){
             std::fill(particles.muI.begin(), particles.muI.end(), mu_1);
@@ -258,6 +262,8 @@ void Simulation::advanceStep(){
     timer t_defgrad; t_defgrad.start();
     deformationUpdate();
     t_defgrad.stop(); runtime_defgrad += t_defgrad.get_timing();
+
+    nonlocalProjection();
 
     positionUpdate();
 

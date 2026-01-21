@@ -29,6 +29,9 @@ if (USE_VDB)
       ../src/simulation/position_update.cpp
       ../src/simulation/musl.cpp
       ../src/simulation/pbc.cpp
+      ../src/simulation/nonlocal_projection.cpp
+			../src/simulation/nonlocal_p2g.cpp
+			../src/simulation/nonlocal_g2p.cpp
     )
 
 	set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
