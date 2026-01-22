@@ -29,8 +29,9 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
         if (plastic_model == PlasticModel::VM){
 
+            T q_yield = q_max * std::exp(-xi * particles.eps_pl_dev[p] - xi_nonloc * particles.eps_pl_dev_nonloc[p]);
             // T q_yield = std::max( (T)1e-3, q_max + xi * particles.eps_pl_dev[p] + xi_nonloc * particles.eps_pl_dev_nonloc[p]);
-            T q_yield = std::max( (T)1e-3, particles.q_max[p] + xi * particles.eps_pl_dev[p] + xi_nonloc * particles.eps_pl_dev_nonloc[p]);
+            // T q_yield = std::max( (T)1e-3, particles.q_max[p] + xi * particles.eps_pl_dev[p] + xi_nonloc * particles.eps_pl_dev_nonloc[p]);
 
             T delta_gamma = hencky_deviatoric_norm - q_yield / e_mu_prefac; // this is eps_pl_dev_instant
 
@@ -54,20 +55,23 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T p_trial = -K * hencky_trace;
             T q_trial = e_mu_prefac * hencky_deviatoric_norm;
 
-            T q_yield = M * p_trial + q_cohesion;
+            T q_c = q_cohesion * std::exp(-xi * particles.eps_pl_dev[p] - xi_nonloc * particles.eps_pl_dev_nonloc[p]);
+            T q_yield = M * p_trial + q_c;
 
             // left of tip
             if (q_yield < 1e-10){
                 plastic_count++;
 
-                T p_proj = -q_cohesion/M; // larger than p_trial
-                hencky = -p_proj/(K*dim) * TV::Ones();
-                particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
-
                 T delta_gamma = d_prefac * hencky_deviatoric_norm;
                 particles.delta_gamma[p] = delta_gamma / dt;
-                particles.eps_pl_dev[p] += (1.0/d_prefac) * delta_gamma;
-                particles.eps_pl_vol[p] += (p_proj-p_trial)/K;
+
+                ////// The following 5 lines are instead executed in nonlocalProjection:  ///////////////////
+                // T p_proj = -q_c/M; // larger than p_trial
+                // hencky = -p_proj/(K*dim) * TV::Ones();
+                // particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
+                // particles.eps_pl_dev[p] += (1.0/d_prefac) * delta_gamma;
+                // particles.eps_pl_vol[p] += (p_proj-p_trial)/K;
+                /////////////////////////////////////////////////////////////////////////////////////////////
             }
             else{ // right of tipe
                 T delta_gamma = d_prefac * (hencky_deviatoric_norm - q_yield / e_mu_prefac);
@@ -76,9 +80,11 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                     plastic_count++;
                     particles.delta_gamma[p] = delta_gamma / dt;
 
-                    hencky -= (1.0/d_prefac) * delta_gamma * hencky_deviatoric;
-                    particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
-                    particles.eps_pl_dev[p] += (1.0/d_prefac) * delta_gamma;
+                    ////// The following 3 lines are instead executed in nonlocalProjection:  ///////////////////
+                    // hencky -= (1.0/d_prefac) * delta_gamma * hencky_deviatoric;
+                    // particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
+                    // particles.eps_pl_dev[p] += (1.0/d_prefac) * delta_gamma;
+                    /////////////////////////////////////////////////////////////////////////////////////////////
                 }
             } // if else side of tip
 
