@@ -20,6 +20,10 @@ public:
 
     virtual TV normal(const TV& X_in) const = 0;
 
+    virtual void move(T time) {
+        // do nothing by default
+    }
+
 };
 
 #endif  // OBJECTGENERAL_HPP
