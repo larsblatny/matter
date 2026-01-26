@@ -25,7 +25,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         if (hencky_deviatoric_norm > 0)
             hencky_deviatoric /= hencky_deviatoric_norm; // normalize the deviatoric vector so it gives a unit vector specifying the deviatoric direction
 
-         particles.Fe_trial[p] = Fe_trial;
+        //  particles.Fe_trial[p] = Fe_trial;
 
         if (plastic_model == PlasticModel::VM){
 
@@ -39,11 +39,11 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 plastic_count++;
                 particles.delta_gamma[p] = d_prefac * delta_gamma / dt;
 
-                ////// The following 3 lines are instead executed in nonlocalProjection:  ///////////////////
-                // hencky -= delta_gamma * hencky_deviatoric;
-                // particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
-                // particles.eps_pl_dev[p] += delta_gamma;
-                /////////////////////////////////////////////////////////////////////////////////////////////
+                ////// The following 3 lines can be executed in nonlocalProjection ///////////////////
+                hencky -= delta_gamma * hencky_deviatoric;
+                particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
+                particles.eps_pl_dev[p] += delta_gamma;
+                //////////////////////////////////////////////////////////////////////////////////////
 
             } // end plastic projection
 
@@ -62,29 +62,29 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             if (q_yield < 1e-10){
                 plastic_count++;
 
-                T delta_gamma = d_prefac * hencky_deviatoric_norm;
-                particles.delta_gamma[p] = delta_gamma / dt;
+                T delta_gamma = hencky_deviatoric_norm; // this is eps_pl_dev_instant
+                particles.delta_gamma[p] = d_prefac * delta_gamma / dt;
 
-                ////// The following 5 lines are instead executed in nonlocalProjection:  ///////////////////
-                // T p_proj = -q_c/M; // larger than p_trial
-                // hencky = -p_proj/(K*dim) * TV::Ones();
-                // particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
-                // particles.eps_pl_dev[p] += (1.0/d_prefac) * delta_gamma;
-                // particles.eps_pl_vol[p] += (p_proj-p_trial)/K;
-                /////////////////////////////////////////////////////////////////////////////////////////////
+                ////// The following 5 lines can be executed in nonlocalProjection ///////////////////
+                T p_proj = -q_c/M; // larger than p_trial
+                hencky = -p_proj/(K*dim) * TV::Ones();
+                particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
+                particles.eps_pl_dev[p] += delta_gamma;
+                particles.eps_pl_vol[p] += (p_proj-p_trial)/K;
+                //////////////////////////////////////////////////////////////////////////////////////
             }
             else{ // right of tipe
-                T delta_gamma = d_prefac * (hencky_deviatoric_norm - q_yield / e_mu_prefac);
+                T delta_gamma = hencky_deviatoric_norm - q_yield / e_mu_prefac; // this is eps_pl_dev_instant
 
                 if (delta_gamma > 0){ // project to yield surface
                     plastic_count++;
-                    particles.delta_gamma[p] = delta_gamma / dt;
+                    particles.delta_gamma[p] = d_prefac * delta_gamma / dt;
 
-                    ////// The following 3 lines are instead executed in nonlocalProjection:  ///////////////////
-                    // hencky -= (1.0/d_prefac) * delta_gamma * hencky_deviatoric;
-                    // particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
-                    // particles.eps_pl_dev[p] += (1.0/d_prefac) * delta_gamma;
-                    /////////////////////////////////////////////////////////////////////////////////////////////
+                    ////// The following 3 lines can be executed in nonlocalProjection ///////////////////
+                    hencky -= delta_gamma * hencky_deviatoric;
+                    particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
+                    particles.eps_pl_dev[p] += delta_gamma;
+                    //////////////////////////////////////////////////////////////////////////////////////
                 }
             } // if else side of tip
 

@@ -25,7 +25,7 @@ public:
 
       eps_pl_dev_nonloc.resize(Np);  std::fill( eps_pl_dev_nonloc.begin(),  eps_pl_dev_nonloc.end(),  0.0 );
       delta_gamma_nonloc.resize(Np); std::fill( delta_gamma_nonloc.begin(), delta_gamma_nonloc.end(), 0.0 );
-      Fe_trial.resize(Np);           std::fill( Fe_trial.begin(),           Fe_trial.end(),    TM::Zero() );
+      // Fe_trial.resize(Np);           std::fill( Fe_trial.begin(),           Fe_trial.end(),    TM::Zero() );
       q_max.resize(Np);              std::fill( q_max.begin(),              q_max.end(),              0.0 );
   }
 
@@ -46,7 +46,7 @@ public:
 
   std::vector<T> eps_pl_dev_nonloc;
   std::vector<T> delta_gamma_nonloc;
-  std::vector<TM> Fe_trial;
+  // std::vector<TM> Fe_trial;
   std::vector<T> q_max;
 };
 
