@@ -12,7 +12,7 @@ public:
     T friction;
     std::string name;
 
-    ObjectGeneral(BC bc, T friction, std::string name) : bc(bc), friction(friction), name(name) {}
+    ObjectGeneral(BC bc, T friction, std::string name, TV v_object = TV::Zero()) : bc(bc), friction(friction), name(name) {}
 
     virtual ~ObjectGeneral(){}
 
@@ -22,6 +22,10 @@ public:
 
     virtual void move(T time) {
         // do nothing by default
+    }
+
+    virtual TV v_object(T time, const TV& X_in) const {
+        return TV::Zero(); // return zero by default
     }
 
 };

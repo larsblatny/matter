@@ -34,14 +34,40 @@ public:
             n /= len;
 
         return n;
-
     }
 
     void move(T time) override {
+
+        // update radius
         T stime = time / tf;
         r = 1.0 / ( (1-stime)/ri + stime/rf );
+
+        // update center
         c(1) = -r;
     }
+
+    TV v_object(T time, const TV& X_in) const override {
+
+        T stime = time / tf;
+        T rad = 1.0 / ( (1-stime)/ri + stime/rf );
+
+        // dr/dt (always negative)
+        T drds = -rad * rad * (1.0 / rf - 1.0 / ri);
+        T drdt = drds / tf;
+
+        TV ey = TV::Zero();
+        ey(1) = 1;
+
+        TV vel = drdt * (ey - normal(X_in));
+        vel(0) = 0;
+
+        // debug("Position: \n", X_in, "\n");
+        // debug("Velocity: \n", vel, "\n");
+
+        return vel;
+    }
+
+
 
 };
 
