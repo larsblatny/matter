@@ -29,7 +29,7 @@ public:
 
         TV n = X_in - c; // center to point gives OUTWARD normal
 
-        double len = n.norm();
+        T len = n.norm();
         if (len > 0.0)
             n /= len;
 
@@ -59,12 +59,16 @@ public:
         ey(1) = 1;
 
         TV vel = drdt * (ey - normal(X_in));
-        vel(0) = 0;
+        vel(0) *= -1; // correct, but often velocities too large
+        // vel(0) = 0; // not correct, but can help if velocities too large
 
-        // debug("Position: \n", X_in, "\n");
-        // debug("Velocity: \n", vel, "\n");
+        // debug("drdt: ", drdt, "\n");
+        // debug("Position: ", X_in(0), ", ", X_in(1), "\n");
+        // debug("Normal: ", normal(X_in)(0), ", ", normal(X_in)(1), "\n");
+        // debug("Velocity: ", vel(0), ", ", vel(1), "\n \n");
 
-        return vel;
+        // return vel;
+        return TV::Zero(); // return zero if no velocity of object. Same as not defining the function.
     }
 
 

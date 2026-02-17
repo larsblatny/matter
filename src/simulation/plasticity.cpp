@@ -29,8 +29,8 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
         if (plastic_model == PlasticModel::VM){
 
-            T q_yield = q_max * std::exp(-xi * particles.eps_pl_dev[p] - xi_nonloc * particles.eps_pl_dev_nonloc[p]);
-            // T q_yield = std::max( (T)1e-3, q_max + xi * particles.eps_pl_dev[p] + xi_nonloc * particles.eps_pl_dev_nonloc[p]);
+            T q_yield = q_max * std::exp(xi * particles.eps_pl_dev[p] + xi_nonloc * particles.eps_pl_dev_nonloc[p]);
+            // T q_yield = std::max( (T)0, q_max + xi * particles.eps_pl_dev[p] + xi_nonloc * particles.eps_pl_dev_nonloc[p]);
             // T q_yield = std::max( (T)1e-3, particles.q_max[p] + xi * particles.eps_pl_dev[p] + xi_nonloc * particles.eps_pl_dev_nonloc[p]);
 
             T delta_gamma = hencky_deviatoric_norm - q_yield / e_mu_prefac; // this is eps_pl_dev_instant
@@ -55,7 +55,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T p_trial = -K * hencky_trace;
             T q_trial = e_mu_prefac * hencky_deviatoric_norm;
 
-            T q_c = q_cohesion * std::exp(-xi * particles.eps_pl_dev[p] - xi_nonloc * particles.eps_pl_dev_nonloc[p]);
+            T q_c = q_cohesion * std::exp(xi * particles.eps_pl_dev[p] + xi_nonloc * particles.eps_pl_dev_nonloc[p]);
             T q_yield = M * p_trial + q_c;
 
             // left of tip
