@@ -13,7 +13,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         // Do nothing
     }
 
-    else if (plastic_model == PlasticModel::VM || plastic_model == PlasticModel::DP || plastic_model == PlasticModel::DPSoft || plastic_model == PlasticModel::MCC || plastic_model == PlasticModel::VMVisc || plastic_model == PlasticModel::DPVisc || plastic_model == PlasticModel::MCCVisc || plastic_model == PlasticModel::DPMui || plastic_model == PlasticModel::MCCMui || plastic_model == PlasticModel::MCCAssociative){
+    else if (plastic_model == PlasticModel::VM || plastic_model == PlasticModel::DP || plastic_model == PlasticModel::DPSoft || plastic_model == PlasticModel::MCC || plastic_model == PlasticModel::VMVisc || plastic_model == PlasticModel::DPVisc || plastic_model == PlasticModel::MCCVisc || plastic_model == PlasticModel::DPMui || plastic_model == PlasticModel::MCCMui || plastic_model == PlasticModel::MCCVisc2){
 
         Eigen::JacobiSVD<TM> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
         // TV hencky = svd.singularValues().array().log();
@@ -33,7 +33,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             // If hardening law:
             // q_yield = f(q_max, hardening variable) ....
 
-            T delta_gamma = hencky_deviatoric_norm - q_yield / e_mu_prefac; // this is eps_pl_dev_instant
+            T delta_gamma = hencky_deviatoric_norm - q_yield / e_mu_prefac; // this is eps_pl_dev_inst
 
             if (delta_gamma > 0){ // project to yield surface
                 plastic_count++;
@@ -619,60 +619,63 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             } // if perform_rma
         } // end MCC / MCCVisc
         
-        else if (plastic_model == PlasticModel::MCCAssociative){
+        else if (plastic_model == PlasticModel::MCCVisc2){
 
             // the trial stress states
-            T p_yield = -K * hencky_trace;
-            T q_yield = e_mu_prefac * hencky_deviatoric_norm;
+            T p_stress = -K * hencky_trace;
+            T q_stress = e_mu_prefac * hencky_deviatoric_norm;
 
             // make copies
-            T p_trial = p_yield;
-            T q_trial = q_yield;
+            T p_trial = p_stress;
+            T q_trial = q_stress;
 
             bool perform_rma;
             T p_c;
-            
-            T delta_gamma = 1;// Puting any value means "plastic_model == PlasticModel::MCCAssociative"
-            // plastic_model variable does not exist in mcc_rma_explicit.hpp
-            // This solution is softer than passing it as argument or making mcc_rma function a member of Simulation
-
             if (hardening_law == HardeningLaw::NoHard){ // Exponential Explicit Hardening
-                   perform_rma =       MCCRMAExplicit(p_yield, q_yield, exit, M, p0, beta, mu, K, f_mu_prefac, &delta_gamma);
+                   perform_rma =       MCCRMAExplicit(p_stress, q_stress, exit, M, p0, beta, mu, K, f_mu_prefac);
+                // perform_rma = MCCRMAExplicitOnevar(p_stress, q_stress, exit, M, p0, beta, mu, K);
             }
             else if (hardening_law == HardeningLaw::ExpoExpl){ // Exponential Explicit Hardening
                 p_c = std::max(stress_tolerance, p0*std::exp(-xi*particles.eps_pl_vol[p]));
-                   perform_rma =       MCCRMAExplicit(p_yield, q_yield, exit, M, p_c, beta, mu, K, f_mu_prefac, &delta_gamma);
+                   perform_rma =       MCCRMAExplicit(p_stress, q_stress, exit, M, p_c, beta, mu, K, f_mu_prefac);
+                // perform_rma = MCCRMAExplicitOnevar(p_stress, q_stress, exit, M, p_c, beta, mu, K);
             }
             else if (hardening_law == HardeningLaw::SinhExpl){ // Sinh Explicit Hardening
                 p_c = std::max(stress_tolerance, K*std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(p0/K)));
-                   perform_rma =       MCCRMAExplicit(p_yield, q_yield, exit, M, p_c, beta, mu, K, f_mu_prefac, &delta_gamma);
+                   perform_rma =       MCCRMAExplicit(p_stress, q_stress, exit, M, p_c, beta, mu, K, f_mu_prefac);
+                // perform_rma = MCCRMAExplicitOnevar(p_stress, q_stress, exit, M, p_c, beta, mu, K);
+            }
+            else if (hardening_law == HardeningLaw::ExpoImpl){ // Exponential Implicit Hardening
+                   perform_rma = MCCRMAImplicitExponentialOnevar(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, particles.eps_pl_vol[p]);
+                // perform_rma =       MCCRMAImplicitExponential(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, f_mu_prefac, particles.eps_pl_vol[p]);
+            }
+            else if (hardening_law == HardeningLaw::SinhImpl) {
+                perform_rma = MCCRMAImplicitSinhOnevar(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, particles.eps_pl_vol[p]);
             }
             else{
                 debug("You specified an invalid HARDENING LAW!");
                 exit = 1;
             }
 
-
             if (perform_rma) { // returns true if it performs a return mapping
-                T dydq_yield = 2 * q_yield;
-                T dydp_yield = M*M * (beta*p_c + 2*p_yield - p_c);
-                
-                T eps_dot_pl_vol_inst = - delta_gamma * dydp_yield * dt / t_relax;
-                T eps_dot_pl_dev_inst = delta_gamma * (1/d_prefac) * dydq_yield * dt / t_relax;
-                
-                particles.eps_pl_vol[p] += eps_dot_pl_vol_inst;
-                particles.eps_pl_dev[p] += eps_dot_pl_dev_inst;
 
-                particles.delta_gamma[p] = delta_gamma / dt;
+                T tmp = 1.0 / (1.0 + perzyna_visc / dt);
+                T eps_pl_vol_inst = - tmp * (p_trial - p_stress) / K;
+                T eps_pl_dev_inst =   tmp * (q_trial - q_stress) / e_mu_prefac;
+                
+                particles.eps_pl_vol[p] += eps_pl_vol_inst;
+                particles.eps_pl_dev[p] += eps_pl_dev_inst;
 
-                T h_vol = - p_trial / K         - eps_dot_pl_vol_inst;
-                T h_dev = q_trial / e_mu_prefac - eps_dot_pl_dev_inst;
+                particles.delta_gamma[p] = d_prefac * eps_pl_dev_inst / dt;
+
+                T h_vol = - p_trial / K         - eps_pl_vol_inst;
+                T h_dev = q_trial / e_mu_prefac - eps_pl_dev_inst;
                 hencky = h_dev * hencky_deviatoric + (h_vol/dim) * TV::Ones();
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
                 
             } // if perform_rma
             
-        } // end MCC Associative viscoplastic rule
+        } // end if MCCVisc2
 
     } // end plastic_model type
 

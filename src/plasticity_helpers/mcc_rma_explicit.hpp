@@ -5,7 +5,7 @@
 
 #include "../tools.hpp"
 
-bool MCCRMAExplicit(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T f_mu_prefac, T* out_delta_gamma = nullptr)
+bool MCCRMAExplicit(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T f_mu_prefac)
 {
     // T y = M * M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
     T y = M * M * (p - p0) * (p + beta * p0) + (q * q);
@@ -89,11 +89,6 @@ bool MCCRMAExplicit(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T f_mu_
         p = std::min(p, p0);
         // q = M * std::sqrt((p0 - p) * (beta * p0 + p) / (1 + 2 * beta));
         q = M * std::sqrt((p0 - p) * (beta * p0 + p));
-        
-        if (out_delta_gamma != nullptr){ // understand "if(plastic_model = PlasticModel::MCCAssociative)"
-            *out_delta_gamma = delta_gamma;
-        }
-
 
         return true; // if plastic, i.e., y > 0
     } // end if outside

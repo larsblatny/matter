@@ -139,10 +139,6 @@ void Simulation::simulate(){
         }
     }
 
-    if (plastic_model == PlasticModel::MCCAssociative){
-        t_relax = eta/E;
-    }
-
     debug("Number of particles: ", Np);
     debug("Grid spacing dx:     ", dx);
     debug("Elastic wave speed:  ", wave_speed);

@@ -93,10 +93,6 @@ public:
   // Perzyna
   T perzyna_exp = 1;
   T perzyna_visc = 0;
-  
-  // Associative viscoplastic flow rule
-  T eta = 5.0e3; // (Pa.s) Viscosity of honey
-  T t_relax = eta/E; // Relaxation time
 
   // MCC
   T beta = 0;

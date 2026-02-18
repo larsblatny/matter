@@ -52,7 +52,7 @@ typedef double T; // float or double
 
 enum class PlateType { top, bottom, left, right, front, back };
 enum class ElasticModel { Hencky, NeoHookean };
-enum class PlasticModel { NoPlasticity, VM, DP, DPSoft, MCC, VMVisc, DPVisc, MCCVisc, DPMui, MCCMui, MCCAssociative};
+enum class PlasticModel { NoPlasticity, VM, DP, DPSoft, MCC, VMVisc, DPVisc, MCCVisc, MCCVisc2, DPMui, MCCMui};
 enum class HardeningLaw { NoHard, ExpoExpl, ExpoImpl, SinhExpl, SinhImpl };
 enum class BC { NoSlip, SlipStick, SlipFree };
 
