@@ -95,4 +95,5 @@ bool MCCRMAExplicit(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T f_mu_
     return false;
 }
 
+
 #endif // MCCRMAEXPLICIT_HPP
