@@ -15,11 +15,13 @@ void Simulation::saveParticleData(std::string extra){
 
         TM Fe = particles.F[p];
 
-        TM tau;
-        if (elastic_model == ElasticModel::NeoHookean)
-            tau = NeoHookeanPiola(Fe) * Fe.transpose();
-        else if (elastic_model == ElasticModel::Hencky)
-            tau = HenckyPiola(Fe) * Fe.transpose();
+        // TM tau;
+        // if (elastic_model == ElasticModel::NeoHookean)
+        //     tau = NeoHookeanPiola(Fe) * Fe.transpose();
+        // else if (elastic_model == ElasticModel::Hencky)
+        //     tau = HenckyPiola(Fe) * Fe.transpose();
+
+        TM tau = particles.tau[p];
 
         T Je = Fe.determinant();
 
@@ -266,11 +268,13 @@ void Simulation::computeAvgData(TM& volavg_cauchy, TM& volavg_kirchh, T& Javg){
 
         TM Fe = particles.F[p];
 
-        TM tau;
-        if (elastic_model == ElasticModel::NeoHookean)
-            tau = NeoHookeanPiola(Fe) * Fe.transpose();
-        else if (elastic_model == ElasticModel::Hencky)
-            tau = HenckyPiola(Fe) * Fe.transpose();
+        // TM tau;
+        // if (elastic_model == ElasticModel::NeoHookean)
+        //     tau = NeoHookeanPiola(Fe) * Fe.transpose();
+        // else if (elastic_model == ElasticModel::Hencky)
+        //     tau = HenckyPiola(Fe) * Fe.transpose();
+
+        TM tau = particles.tau[p];
 
         T Je = Fe.determinant();
         T J = Je * std::exp( particles.eps_pl_vol[p] );

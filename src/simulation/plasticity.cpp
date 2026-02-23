@@ -11,6 +11,23 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
     if (plastic_model == PlasticModel::NoPlasticity){
         // Do nothing
+
+        // Get new stress for elasticity
+        Eigen::JacobiSVD<TM> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
+        TV hencky = svd.singularValues().array().abs().max(1e-4).log();
+
+        particles.F[p] = Fe_trial;
+        TM Fe = particles.F[p];
+        TM dPsidF;
+        if (elastic_model == ElasticModel::NeoHookean){
+            dPsidF = mu * (Fe - Fe.transpose().inverse()) + lambda * std::log(Fe.determinant()) * Fe.transpose().inverse();
+            particles.tau[p] = dPsidF * Fe.transpose();
+        }
+        else if (elastic_model == ElasticModel::Hencky){ // St Venant Kirchhoff with Hencky strain
+            T e_trace = hencky.sum();
+            TV Kirchhoff_principal = lambda*e_trace*TV::Ones() + T(2.)*mu*hencky;
+            particles.tau[p] = svd.matrixU() * Kirchhoff_principal.array().matrix().asDiagonal() * svd.matrixU().transpose();
+        }
     }
 
     else if (plastic_model == PlasticModel::VM || plastic_model == PlasticModel::DP || plastic_model == PlasticModel::DPSoft || plastic_model == PlasticModel::MCC || plastic_model == PlasticModel::VMVisc || plastic_model == PlasticModel::DPVisc || plastic_model == PlasticModel::MCCVisc || plastic_model == PlasticModel::DPMui || plastic_model == PlasticModel::MCCMui){
@@ -618,6 +635,22 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
             } // if perform_rma
         } // end MCC / MCCVisc
+
+        // Get new stress
+        TM Fe = particles.F[p];
+        TM dPsidF;
+        if (elastic_model == ElasticModel::NeoHookean){
+            dPsidF = mu * (Fe - Fe.transpose().inverse()) + lambda * std::log(Fe.determinant()) * Fe.transpose().inverse();
+            particles.tau[p] = dPsidF * Fe.transpose();
+        }
+        else if (elastic_model == ElasticModel::Hencky){ // St Venant Kirchhoff with Hencky strain
+            T e_trace = hencky.sum();
+            TV Kirchhoff_principal = lambda*e_trace*TV::Ones() + T(2.)*mu*hencky;
+            particles.tau[p] = svd.matrixU() * Kirchhoff_principal.array().matrix().asDiagonal() * svd.matrixU().transpose();
+        }
+        else{
+            debug("You specified an unvalid ELASTIC model!");
+        }
 
     } // end plastic_model type
 

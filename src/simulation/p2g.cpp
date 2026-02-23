@@ -26,20 +26,22 @@ void Simulation::P2G(){
         #endif
 
             // Stress
-            TM Fe = particles.F[p];
+            // TM Fe = particles.F[p];
 
-            TM dPsidF;
-            if (elastic_model == ElasticModel::NeoHookean){
-                dPsidF = NeoHookeanPiola(Fe);
-            }
-            else if (elastic_model == ElasticModel::Hencky){ // St Venant Kirchhoff with Hencky strain
-                dPsidF = HenckyPiola(Fe);
-            }
-            else{
-                debug("You specified an unvalid ELASTIC model!");
-            }
+            // TM dPsidF;
+            // if (elastic_model == ElasticModel::NeoHookean){
+            //     dPsidF = NeoHookeanPiola(Fe);
+            // }
+            // else if (elastic_model == ElasticModel::Hencky){ // St Venant Kirchhoff with Hencky strain
+            //     dPsidF = HenckyPiola(Fe);
+            // }
+            // else{
+            //     debug("You specified an unvalid ELASTIC model!");
+            // }
 
-            TM tau = dPsidF * Fe.transpose();
+            // TM tau = dPsidF * Fe.transpose();
+
+            TM tau = particles.tau[p];
 
             for(int i = i_base; i < i_base+4; i++){
                 T xi = grid.x[i];
