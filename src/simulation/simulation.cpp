@@ -256,7 +256,7 @@ void Simulation::advanceStep(){
         MUSL();
 
     timer t_defgrad; t_defgrad.start();
-    deformationUpdate();
+    // deformationUpdate();
     t_defgrad.stop(); runtime_defgrad += t_defgrad.get_timing();
 
     positionUpdate();
