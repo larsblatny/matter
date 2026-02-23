@@ -5,6 +5,7 @@
 void Simulation::resizeGrid(){
     grid.v.resize(grid_nodes);    std::fill( grid.v.begin(),    grid.v.end(),    TV::Zero() );
     grid.flip.resize(grid_nodes); std::fill( grid.flip.begin(), grid.flip.end(), TV::Zero() );
+    grid.force.resize(grid_nodes); std::fill( grid.force.begin(), grid.force.end(), TV::Zero() );
     grid.mass.resize(grid_nodes); std::fill( grid.mass.begin(), grid.mass.end(), 0.0        );
     if (use_mibf)
         grid.friction.resize(grid_nodes); std::fill( grid.friction.begin(), grid.friction.end(), 0.0 );

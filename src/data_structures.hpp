@@ -51,6 +51,7 @@ public:
     #endif
     std::vector<TV> v;
     std::vector<TV> flip;
+    std::vector<TV> force;
     std::vector<T> mass;
     std::vector<T> friction;
     T xc;
