@@ -25,9 +25,8 @@ void Simulation::P2G(){
             unsigned int k_base = std::max(0, int(std::floor((xp(2)-grid.zc)*one_over_dx)) - 1); // k_base = std::min(k_base, Nz-4);
         #endif
 
-            // Stress
+            // ALT 1: Compute stress
             // TM Fe = particles.F[p];
-
             // TM dPsidF;
             // if (elastic_model == ElasticModel::NeoHookean){
             //     dPsidF = NeoHookeanPiola(Fe);
@@ -38,9 +37,9 @@ void Simulation::P2G(){
             // else{
             //     debug("You specified an unvalid ELASTIC model!");
             // }
-
             // TM tau = dPsidF * Fe.transpose();
 
+            // ALT 2: Use the saved stress
             TM tau = particles.tau[p];
 
             for(int i = i_base; i < i_base+4; i++){
@@ -57,7 +56,7 @@ void Simulation::P2G(){
                         T wk = N((xp(2) - zi)*one_over_dx);
                         T wk_grad = dNdu((xp(2) - zi) * one_over_dx)  * one_over_dx;
 
-                        T weight = wi * wj * wk; //wip(xp(0), xp(1), xp(2), xi, yi, zi, one_over_dx);
+                        T weight = wi * wj * wk;
                         TV weight_grad;
                         weight_grad << wi_grad*wj*wk,
                                        wi*wj_grad*wk,
@@ -79,7 +78,7 @@ void Simulation::P2G(){
                         }
                     } // end for k
         #else
-                    T weight = wi * wj; //wip(xp(0), xp(1), xi, yi, one_over_dx);
+                    T weight = wi * wj;
                     TV weight_grad;
                     weight_grad << wi_grad*wj,
                                    wi*wj_grad;

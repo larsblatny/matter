@@ -42,12 +42,15 @@ void Simulation::MUSL(){
 
             for(int i = i_base; i < i_base+4; i++){
                 T xi = grid.x[i];
+                T wi = N((xp(0)-xi)*one_over_dx);
                 for(int j = j_base; j < j_base+4; j++){
                     T yi = grid.y[j];
+                    T wj = N((xp(1) - yi)*one_over_dx);
         #ifdef THREEDIM
                     for(int k = k_base; k < k_base+4; k++){
                         T zi = grid.z[k];
-                        T weight = wip(xp(0), xp(1), xp(2), xi, yi, zi, one_over_dx);
+                        T wk = N((xp(2) - zi)*one_over_dx);
+                        T weight = wi * wj * wk;
                         if (weight > 1e-25){
                             grid_v_local[ind(i,j,k)] += particles.v[p] * weight;
                             if (flip_ratio < 0){ // APIC
@@ -60,9 +63,9 @@ void Simulation::MUSL(){
                         }
                     } // end for k
         #else
-                    T weight = wip(xp(0), xp(1), xi, yi, one_over_dx);
+                    T weight = wi * wj;
                     if (weight > 1e-25){
-                        grid_v_local[ind(i,j)]     += particles.v[p] * weight;
+                        grid_v_local[ind(i,j)] += particles.v[p] * weight;
                         if (flip_ratio < 0){ // APIC
                             TV posdiffvec = TV::Zero();
                             posdiffvec(0) = xi-xp(0);

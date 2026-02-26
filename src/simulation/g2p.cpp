@@ -46,7 +46,7 @@ void Simulation::G2P(){
                         T wk = N((xp(2) - zi)*one_over_dx);
                         T wk_grad = dNdu((xp(2) - zi) * one_over_dx)  * one_over_dx;
                         
-                        T weight = wi * wj * wk; //wip(xp(0), xp(1), xp(2), xi, yi, zi, one_over_dx);
+                        T weight = wi * wj * wk;
                         TV weight_grad; 
                         weight_grad << wi_grad*wj*wk,
                                        wi*wj_grad*wk,
@@ -66,7 +66,7 @@ void Simulation::G2P(){
                         }
                     } // end loop k
         #else
-                    T weight = wi * wj; //wip(xp(0), xp(1), xi, yi, one_over_dx);
+                    T weight = wi * wj;
                     TV weight_grad;
                     weight_grad << wi_grad*wj,
                                    wi*wj_grad;
@@ -93,16 +93,19 @@ void Simulation::G2P(){
                 particles.flip[p] = flipp;
             }
 
-            // Update material
-            TM Fe_trial = particles.F[p];
-            Fe_trial = (TM::Identity() + dt * v_grad )* Fe_trial;
-            particles.F[p] = Fe_trial;
+            if (!use_musl){
+                TM Fe_trial = particles.F[p];
+                Fe_trial = Fe_trial + dt * v_grad * Fe_trial;
+                particles.F[p] = Fe_trial;
 
-            plasticity(p, plastic_count, Fe_trial);
-
+                plasticity(p, plastic_count, Fe_trial);
+            }
 
         } // end loop p
 
     } // end omp paralell
+
+    if (!reduce_verbose && !use_musl)
+        debug("               Proj: ", plastic_count, " / ", Np);
 
 } // end G2P
