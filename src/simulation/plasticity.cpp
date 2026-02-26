@@ -13,7 +13,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         // Do nothing
     }
 
-    else if (plastic_model == PlasticModel::VM || plastic_model == PlasticModel::DP || plastic_model == PlasticModel::DPSoft || plastic_model == PlasticModel::MCC || plastic_model == PlasticModel::VMVisc || plastic_model == PlasticModel::DPVisc || plastic_model == PlasticModel::MCCVisc || plastic_model == PlasticModel::DPMui || plastic_model == PlasticModel::MCCMui || plastic_model == PlasticModel::MCCVisc2){
+    else if (plastic_model == PlasticModel::VM || plastic_model == PlasticModel::DP || plastic_model == PlasticModel::DPSoft || plastic_model == PlasticModel::MCC || plastic_model == PlasticModel::VMVisc || plastic_model == PlasticModel::DPVisc || plastic_model == PlasticModel::MCCVisc || plastic_model == PlasticModel::DPMui || plastic_model == PlasticModel::MCCMui){
 
         Eigen::JacobiSVD<TM> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
         // TV hencky = svd.singularValues().array().log();
@@ -281,7 +281,12 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 T delta_gamma;
 
                 if (perzyna_exp == 1){
-                    delta_gamma = (q_trial-q_yield) / (f_mu_prefac + q_yield*perzyna_visc/dt);
+                    if (use_duvaut_lions_formulation){
+                        delta_gamma = (q_trial-q_yield) / (f_mu_prefac*(1+perzyna_visc/dt));
+                    }
+                    else{
+                        delta_gamma = (q_trial-q_yield) / (f_mu_prefac + q_yield*perzyna_visc/dt);
+                    }
                     if (delta_gamma < 0){
                         debug("DPVisc: FATAL negative delta_gamma = ", delta_gamma);
                         exit = 1;
@@ -298,16 +303,30 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                             exit = 1;
                         }
 
-                        T tm = perzyna_visc * delta_gamma + dt;
-                        T tmp = dt / tm;
-                        T tmp1 = std::pow(tmp, perzyna_exp);
+                        T residual;
+                        T residual_diff;
+                        if (use_duvaut_lions_formulation){
 
-                        T residual = (q_trial - f_mu_prefac * delta_gamma) * tmp1 - q_yield;
-                        if (std::abs(residual) < 1e-2) {
-                            break;
+                            residual = q_trial - q_yield - f_mu_prefac * ( std::pow(perzyna_visc/dt*delta_gamma, perzyna_exp) + delta_gamma );
+                            if (std::abs(residual) < 1e-2) {
+                                break;
+                            }
+                            residual_diff = -f_mu_prefac * ( std::pow(perzyna_visc/dt, perzyna_exp) * perzyna_exp * std::pow(delta_gamma, perzyna_exp-1) + 1 );
+
                         }
+                        else{
 
-                        T residual_diff = -f_mu_prefac * tmp1 + (q_trial - f_mu_prefac * delta_gamma) * perzyna_exp * std::pow(tmp, perzyna_exp - 1) * (-perzyna_visc * dt) / (tm * tm);
+                            T tm = perzyna_visc * delta_gamma + dt;
+                            T tmp = dt / tm;
+                            T tmp1 = std::pow(tmp, perzyna_exp);
+
+                            residual = (q_trial - f_mu_prefac * delta_gamma) * tmp1 - q_yield;
+                            if (std::abs(residual) < 1e-2) {
+                                break;
+                            }
+                            residual_diff = -f_mu_prefac * tmp1 + (q_trial - f_mu_prefac * delta_gamma) * perzyna_exp * std::pow(tmp, perzyna_exp - 1) * (-perzyna_visc * dt) / (tm * tm);
+
+                        }
 
                         if (std::abs(residual_diff) < 1e-14){ // otherwise division by zero
                             debug("DPVisc: FATAL residual_diff too small in abs value = ", residual_diff);
@@ -493,10 +512,9 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T p_trial = p_stress;
             T q_trial = q_stress;
 
-            if (plastic_model == PlasticModel::MCCVisc){
-                if (use_mibf)
-                    particles.muI[p] = M;
-            }
+            if (use_mibf)
+                particles.muI[p] = M;
+            
 
             bool perform_rma;
             T p_c;
@@ -525,143 +543,82 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 debug("You specified an invalid HARDENING LAW!");
                 exit = 1;
             }
-
 
             if (perform_rma) { // returns true if it performs a return mapping
                 plastic_count++;
 
-                T ep = p_stress / (K*dim);
-                T eps_pl_vol_inst = hencky_trace + dim * ep;
-                particles.eps_pl_vol[p] += eps_pl_vol_inst;
+                T b = 1; // must be equal to one unless using duvaut lion formulation
 
-                T delta_gamma;
                 ////////////////////////////////////////////////////////////////
                 if (plastic_model == PlasticModel::MCCVisc){
-
-                    T q_yield = q_stress;
-
-                    if (perzyna_exp == 1){
-                        delta_gamma = (q_trial-q_yield) / (f_mu_prefac + q_yield*perzyna_visc/dt);
-                        if (delta_gamma < 0){
-                            if (delta_gamma > -1e-14){
-                                delta_gamma = 0;
-                            }
-                            else{
-                                debug("MCCVisc: FATAL negative delta_gamma = ", delta_gamma);
-                                exit = 1;
-                            }
+                    if (use_duvaut_lions_formulation){
+                        b = 1.0 / (1.0 + perzyna_visc / dt); // b defined such that "stress = (1-b) * strain_trial + b * stress_yield"
+                        if (perzyna_exp != 1){
+                            debug("MCCVisc: FATAL viscous exponent must be 1 when use_duvaut_lions_formulation = true");
+                            exit = 1;
                         }
                     }
-                    else{ // persyna_exp is not one
+                    else{ // perzyna
+                        T delta_gamma;
+                        T q_yield = q_stress;
 
-                        delta_gamma = 0.01 * (q_trial - q_yield) / f_mu_prefac; // initial guess
-
-                        int max_iter = 60;
-                        for (int iter = 0; iter < max_iter; iter++) {
-                            if (iter == max_iter - 1){ // did not break loop
-                                debug("MCCVisc: FATAL did not exit loop at iter = ", iter);
-                                exit = 1;
+                        if (perzyna_exp == 1){
+                            delta_gamma = (q_trial-q_yield) / (f_mu_prefac + q_yield*perzyna_visc/dt);
+                            if (delta_gamma < 0){
+                                if (delta_gamma > -1e-14){
+                                    delta_gamma = 0;
+                                }
+                                else{
+                                    debug("MCCVisc: FATAL negative delta_gamma = ", delta_gamma);
+                                    exit = 1;
+                                }
                             }
-
-                            T tm = perzyna_visc * delta_gamma + dt;
-                            T tmp = dt / tm;
-                            T tmp1 = std::pow(tmp, perzyna_exp);
-
-                            T residual = (q_trial - f_mu_prefac * delta_gamma) * tmp1 - q_yield;
-                            if (std::abs(residual) < 1e-2) {
-                                break;
-                            }
-
-                            T residual_diff = -f_mu_prefac * tmp1 + (q_trial - f_mu_prefac * delta_gamma) * perzyna_exp * std::pow(tmp, perzyna_exp - 1) * (-perzyna_visc * dt) / (tm * tm);
-
-                            if (std::abs(residual_diff) < 1e-14){ // otherwise division by zero
-                                debug("MCCVisc: FATAL residual_diff too small in abs value = ", residual_diff);
-                                exit = 1;
-                            }
-
-                            delta_gamma -= residual / residual_diff;
-
-                            if (delta_gamma < 0) // not possible and can also lead to division by zero
-                                delta_gamma = 1e-10;
-
-                        } // end N-R iterations
-
-                    } // end if perzyna_exp == 1
-
-                    q_stress = std::max(q_yield, q_trial - f_mu_prefac * delta_gamma); // delta_gamma = dt * gamma_dot_S
-
-                    if (use_mibf){
-                        if (hardening_law == HardeningLaw::ExpoImpl){
-                            p_c = std::max(T(0), p0 * std::exp(-xi*particles.eps_pl_vol[p]));
                         }
-                        else if (hardening_law == HardeningLaw::SinhImpl){
-                            p_c = std::max(T(0), K * std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(p0/K)));
-                        }
+                        else{ // perzyna_exp is not one
 
-                        if ( (p_stress < -beta * p_c + stress_tolerance) || (p_stress > p_c - stress_tolerance) ){
-                            particles.muI[p] = M;
-                        }
-                        else{
-                            particles.muI[p] = q_stress / std::sqrt((p_stress + beta * p_c) * (p_c - p_stress));
-                        }
-                    }
+                            delta_gamma = 0.01 * (q_trial - q_yield) / f_mu_prefac; // initial guess
 
-                } //  end if MCCVisc
+                            int max_iter = 60;
+                            for (int iter = 0; iter < max_iter; iter++) {
+                                if (iter == max_iter - 1){ // did not break loop
+                                    debug("MCCVisc: FATAL did not exit loop at iter = ", iter);
+                                    exit = 1;
+                                }
+
+                                T tm = perzyna_visc * delta_gamma + dt;
+                                T tmp = dt / tm;
+                                T tmp1 = std::pow(tmp, perzyna_exp);
+
+                                T residual = (q_trial - f_mu_prefac * delta_gamma) * tmp1 - q_yield;
+                                if (std::abs(residual) < 1e-2) {
+                                    break;
+                                }
+
+                                T residual_diff = -f_mu_prefac * tmp1 + (q_trial - f_mu_prefac * delta_gamma) * perzyna_exp * std::pow(tmp, perzyna_exp - 1) * (-perzyna_visc * dt) / (tm * tm);
+
+                                if (std::abs(residual_diff) < 1e-14){ // otherwise division by zero
+                                    debug("MCCVisc: FATAL residual_diff too small in abs value = ", residual_diff);
+                                    exit = 1;
+                                }
+
+                                delta_gamma -= residual / residual_diff;
+
+                                if (delta_gamma < 0) // not possible and can also lead to division by zero
+                                    delta_gamma = 1e-10;
+
+                            } // end N-R iterations
+
+                        } // end if perzyna_exp == 1
+
+                        q_stress = std::max(q_yield, q_trial - f_mu_prefac * delta_gamma); // delta_gamma = dt * gamma_dot_S
+
+                    } // end if use_duvaut_lions_formulation 
+
+                } // end if MCCVisc
                 ////////////////////////////////////////////////////////////////
 
-
-                delta_gamma = (q_trial - q_stress) / f_mu_prefac;
-                particles.eps_pl_dev[p] += (1.0/d_prefac) * delta_gamma;
-                particles.delta_gamma[p] = delta_gamma / dt;
-
-                hencky = q_stress / e_mu_prefac * hencky_deviatoric - ep*TV::Ones();
-                particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
-            } // if perform_rma
-        } // end MCC / MCCVisc
-        
-        else if (plastic_model == PlasticModel::MCCVisc2){
-
-            // the trial stress states
-            T p_stress = -K * hencky_trace;
-            T q_stress = e_mu_prefac * hencky_deviatoric_norm;
-
-            // make copies
-            T p_trial = p_stress;
-            T q_trial = q_stress;
-
-            bool perform_rma;
-            T p_c;
-            if (hardening_law == HardeningLaw::NoHard){ // Exponential Explicit Hardening
-                   perform_rma =       MCCRMAExplicit(p_stress, q_stress, exit, M, p0, beta, mu, K, f_mu_prefac);
-                // perform_rma = MCCRMAExplicitOnevar(p_stress, q_stress, exit, M, p0, beta, mu, K);
-            }
-            else if (hardening_law == HardeningLaw::ExpoExpl){ // Exponential Explicit Hardening
-                p_c = std::max(stress_tolerance, p0*std::exp(-xi*particles.eps_pl_vol[p]));
-                   perform_rma =       MCCRMAExplicit(p_stress, q_stress, exit, M, p_c, beta, mu, K, f_mu_prefac);
-                // perform_rma = MCCRMAExplicitOnevar(p_stress, q_stress, exit, M, p_c, beta, mu, K);
-            }
-            else if (hardening_law == HardeningLaw::SinhExpl){ // Sinh Explicit Hardening
-                p_c = std::max(stress_tolerance, K*std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(p0/K)));
-                   perform_rma =       MCCRMAExplicit(p_stress, q_stress, exit, M, p_c, beta, mu, K, f_mu_prefac);
-                // perform_rma = MCCRMAExplicitOnevar(p_stress, q_stress, exit, M, p_c, beta, mu, K);
-            }
-            else if (hardening_law == HardeningLaw::ExpoImpl){ // Exponential Implicit Hardening
-                   perform_rma = MCCRMAImplicitExponentialOnevar(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, particles.eps_pl_vol[p]);
-                // perform_rma =       MCCRMAImplicitExponential(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, f_mu_prefac, particles.eps_pl_vol[p]);
-            }
-            else if (hardening_law == HardeningLaw::SinhImpl) {
-                perform_rma = MCCRMAImplicitSinhOnevar(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, particles.eps_pl_vol[p]);
-            }
-            else{
-                debug("You specified an invalid HARDENING LAW!");
-                exit = 1;
-            }
-
-            if (perform_rma) { // returns true if it performs a return mapping
-
-                T tmp = 1.0 / (1.0 + perzyna_visc / dt);
-                T eps_pl_vol_inst = - tmp * (p_trial - p_stress) / K;
-                T eps_pl_dev_inst =   tmp * (q_trial - q_stress) / e_mu_prefac;
+                T eps_pl_vol_inst = - b * (p_trial - p_stress) / K;
+                T eps_pl_dev_inst =   b * (q_trial - q_stress) / e_mu_prefac;
                 
                 particles.eps_pl_vol[p] += eps_pl_vol_inst;
                 particles.eps_pl_dev[p] += eps_pl_dev_inst;
@@ -672,10 +629,30 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 T h_dev = q_trial / e_mu_prefac - eps_pl_dev_inst;
                 hencky = h_dev * hencky_deviatoric + (h_vol/dim) * TV::Ones();
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
-                
-            } // if perform_rma
-            
-        } // end if MCCVisc2
+
+                if (use_mibf){
+                    if (hardening_law == HardeningLaw::ExpoImpl){
+                        p_c = std::max(T(0), p0 * std::exp(-xi*particles.eps_pl_vol[p]));
+                    }
+                    else if (hardening_law == HardeningLaw::SinhImpl){
+                        p_c = std::max(T(0), K * std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(p0/K)));
+                    }
+
+                    if ( (p_stress < -beta * p_c + stress_tolerance) || (p_stress > p_c - stress_tolerance) ){
+                        particles.muI[p] = M;
+                    }
+                    else{
+                        if (use_duvaut_lions_formulation){
+                            particles.muI[p] = ( (e_mu_prefac*h_dev-q_trial*(1-b))/b ) / std::sqrt((p_stress + beta * p_c) * (p_c - p_stress));
+                        }
+                        else{
+                            particles.muI[p] = q_stress / std::sqrt((p_stress + beta * p_c) * (p_c - p_stress));
+                        }
+                    }
+                } // end if use_mibf
+
+            } // end if perform_rma
+        } // end MCC or MCCVisc
 
     } // end plastic_model type
 
