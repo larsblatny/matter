@@ -22,6 +22,7 @@ public:
 
       F.resize(Np); std::fill( F.begin(), F.end(), TM::Identity() );
       Bmat.resize(Np); std::fill( Bmat.begin(), Bmat.end(), TM::Zero() );
+      tau.resize(Np); std::fill( tau.begin(), tau.end(), TM::Zero() );
   }
 
   std::vector<TV> x;
@@ -38,6 +39,8 @@ public:
 
   std::vector<TM> F;
   std::vector<TM> Bmat;
+  std::vector<TM> tau;
+
 
 };
 
@@ -51,6 +54,7 @@ public:
     #endif
     std::vector<TV> v;
     std::vector<TV> flip;
+    std::vector<TV> force;
     std::vector<T> mass;
     std::vector<T> friction;
     T xc;

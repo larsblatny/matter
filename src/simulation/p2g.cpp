@@ -14,6 +14,7 @@ void Simulation::P2G(){
         std::vector<TV> grid_v_local(grid_nodes, TV::Zero() );
         std::vector<T> grid_mass_local(grid_nodes);
         std::vector<T> grid_friction_local(grid_nodes);
+        std::vector<TV> grid_force_local(grid_nodes, TV::Zero() );
 
         #pragma omp for nowait
         for(int p = 0; p < Np; p++){
@@ -24,17 +25,47 @@ void Simulation::P2G(){
             unsigned int k_base = std::max(0, int(std::floor((xp(2)-grid.zc)*one_over_dx)) - 1); // k_base = std::min(k_base, Nz-4);
         #endif
 
+            // ALT 1: Compute stress
+            // TM Fe = particles.F[p];
+            // TM dPsidF;
+            // if (elastic_model == ElasticModel::NeoHookean){
+            //     dPsidF = NeoHookeanPiola(Fe);
+            // }
+            // else if (elastic_model == ElasticModel::Hencky){ // St Venant Kirchhoff with Hencky strain
+            //     dPsidF = HenckyPiola(Fe);
+            // }
+            // else{
+            //     debug("You specified an unvalid ELASTIC model!");
+            // }
+            // TM tau = dPsidF * Fe.transpose();
+
+            // ALT 2: Use the saved stress
+            TM tau = particles.tau[p];
+
             for(int i = i_base; i < i_base+4; i++){
                 T xi = grid.x[i];
+                T wi = N((xp(0)-xi)*one_over_dx);
+                T wi_grad = dNdu((xp(0) - xi) * one_over_dx)  * one_over_dx;
                 for(int j = j_base; j < j_base+4; j++){
                     T yi = grid.y[j];
+                    T wj = N((xp(1) - yi)*one_over_dx);
+                    T wj_grad = dNdu((xp(1) - yi) * one_over_dx)  * one_over_dx;
         #ifdef THREEDIM
                     for(int k = k_base; k < k_base+4; k++){
                         T zi = grid.z[k];
-                        T weight = wip(xp(0), xp(1), xp(2), xi, yi, zi, one_over_dx);
+                        T wk = N((xp(2) - zi)*one_over_dx);
+                        T wk_grad = dNdu((xp(2) - zi) * one_over_dx)  * one_over_dx;
+
+                        T weight = wi * wj * wk;
+                        TV weight_grad;
+                        weight_grad << wi_grad*wj*wk,
+                                       wi*wj_grad*wk,
+                                       wi*wj*wk_grad;
+
                         if (weight > 1e-25){
                             grid_mass_local[ind(i,j,k)]  += weight;
                             grid_v_local[ind(i,j,k)]     += particles.v[p] * weight;
+                            grid_force_local[ind(i,j,k)] += tau * weight_grad;
                             if (flip_ratio < 0){ // APIC
                                 TV posdiffvec = TV::Zero();
                                 posdiffvec(0) = xi-xp(0);
@@ -47,10 +78,15 @@ void Simulation::P2G(){
                         }
                     } // end for k
         #else
-                    T weight = wip(xp(0), xp(1), xi, yi, one_over_dx);
+                    T weight = wi * wj;
+                    TV weight_grad;
+                    weight_grad << wi_grad*wj,
+                                   wi*wj_grad;
+
                     if (weight > 1e-25){
                         grid_mass_local[ind(i,j)]  += weight;
                         grid_v_local[ind(i,j)]     += particles.v[p] * weight;
+                        grid_force_local[ind(i,j)] += tau * weight_grad;
                         if (flip_ratio < 0){ // APIC
                             TV posdiffvec = TV::Zero();
                             posdiffvec(0) = xi-xp(0);
@@ -70,6 +106,7 @@ void Simulation::P2G(){
             for (int l = 0; l<grid_nodes; l++){
                 grid.mass[l]          += grid_mass_local[l];
                 grid.v[l]             += grid_v_local[l];
+                grid.force[l]         += grid_force_local[l];
                 if (use_mibf)
                     grid.friction[l]  += grid_friction_local[l];
             } // end for l

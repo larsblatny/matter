@@ -76,8 +76,8 @@
     void sampleParticles(S& sim, T kRadius, T ppc = 6, unsigned int crop_to_shape = 0, std::uint32_t attempts = 200, std::uint32_t seed = 42){
         const T Lx = sim.Lx;
         const T Ly = sim.Ly;
-        std::uint32_t kAttempts = 200;
-        std::uint32_t kSeed = 42;
+        std::uint32_t kAttempts = attempts;
+        std::uint32_t kSeed = seed;
         std::array<T, 2> kXMin = std::array<T, 2>{{0, 0}};
         std::array<T, 2> kXMax = std::array<T, 2>{{Lx, Ly}};
 

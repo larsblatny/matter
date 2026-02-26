@@ -199,7 +199,8 @@ void Simulation::simulate(){
     debug("Runtime P2G     = ", runtime_p2g     * 1000.0, " milliseconds");
     debug("Runtime G2P     = ", runtime_g2p     * 1000.0, " milliseconds");
     debug("Runtime Euler   = ", runtime_euler   * 1000.0, " milliseconds");
-    debug("Runtime DefGrad = ", runtime_defgrad * 1000.0, " milliseconds");
+    if (use_musl)
+        debug("Runtime DefGrad = ", runtime_defgrad * 1000.0, " milliseconds");
 
     if (save_sim)
         saveTiming();
@@ -252,12 +253,13 @@ void Simulation::advanceStep(){
     G2P();
     t_g2p.stop(); runtime_g2p += t_g2p.get_timing();
 
-    if (use_musl == true)
+    if (use_musl){
         MUSL();
 
-    timer t_defgrad; t_defgrad.start();
-    deformationUpdate();
-    t_defgrad.stop(); runtime_defgrad += t_defgrad.get_timing();
+        timer t_defgrad; t_defgrad.start();
+        deformationUpdate();
+        t_defgrad.stop(); runtime_defgrad += t_defgrad.get_timing();
+    }
 
     positionUpdate();
 
