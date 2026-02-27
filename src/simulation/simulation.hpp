@@ -91,8 +91,8 @@ public:
   T q_cohesion = 0;
 
   // Perzyna
-  T perzyna_exp = 1;
-  T perzyna_visc = 0;
+  T visc_exponent = 1;
+  T visc_time = 0;
   bool use_duvaut_lions_formulation = false;
 
   // MCC

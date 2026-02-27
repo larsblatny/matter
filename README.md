@@ -46,9 +46,9 @@ With _Matter_, you can simulate granular flow on various simple and complex terr
     * Von Mises
     * Drucker-Prager
     * Modified Cam-Clay
-    * Perzyna-Von Mises
-    * Perzyna-Drucker-Prager
-    * Perzyna-Modified Cam-Clay
+    * Viscous Von Mises
+    * Viscous Drucker-Prager
+    * Viscous Modified Cam-Clay
     * mu(I)-Drucker-Prager
     * mu(I)-Modified Cam-Clay
     * Implementing other (visco)plastic models is easy due to the general framework of the code
@@ -233,26 +233,26 @@ Here is a list of the various plastic models and their parameters:
 |                   |          | `p0`           | 1000.0          |
 |                   |          | `xi`           | 0.0             |
 |                   |          | `M`            | 1.0             |      
-| Perzyna-Von Mises | `PlasticModel::VMVisc` | `q_max` | 100.0         |
+| Viscous Von Mises | `PlasticModel::VMVisc` | `q_max` | 100.0         |
 | |                     | `q_min`        | 100.0           |
 | |                     | `p_min`        | -1.0e20         |
 | |                     | `xi`           | 0.0             |  
-| |                     | `perzyna_exp`  | 1.0             |      
-| |                     | `perzyna_visc` | 0.0             |  
-| Perzyna-Drucker-Prager | `PlasticModel::DPVisc` | `M`  | 1.0  |
-| |                     | `q_cohesion`  | 0.0             |
+| |                     | `visc_exponent` | 1.0            |      
+| |                     | `visc_time`    | 0.0             |  
+| Viscous Drucker-Prager | `PlasticModel::DPVisc` | `M`  | 1.0  |
+| |                     | `q_cohesion`   | 0.0             |
 | |                     | `use_pradhana` | true            |
-| |                     | `perzyna_exp`  | 1.0             |      
-| |                     | `perzyna_visc` | 0.0             |
-| Perzyna-Modified Cam-Clay | `PlasticModel::MCCVisc`  | `beta`  | 0.0 |
+| |                     | `visc_exponent` | 1.0            |      
+| |                     | `visc_time`    | 0.0             |
+| Viscous Modified Cam-Clay | `PlasticModel::MCCVisc`  | `beta`  | 0.0 |
 | |                     | `p0`           | 1000.0          |
 | |                     | `xi`           | 0.0             |
 | |                     | `M`            | 1.0             |  
-| |                     | `perzyna_exp`  | 1.0             |      
-| |                     | `perzyna_visc` | 0.0             |
+| |                     | `visc_exponent` | 1.0            |      
+| |                     | `visc_time`    | 0.0             |
 | $\mu(I)$-rheology     | `PlasticModel::DPMui`  | `q_cohesion` | 0.0 |
 | |                     | `use_pradhana` | true            |
-| |                     | `rho_s`        | 2500             |      
+| |                     | `rho_s`        | 2500            |      
 | |                     | `grain_diameter`| 0.001          |
 | |                     | `I_ref`        | 0.279           |      
 | |                     | `mu_1`         | 0.382           |      
@@ -260,7 +260,7 @@ Here is a list of the various plastic models and their parameters:
 | Critical state $\mu(I)$-rheology | `PlasticModel::MCCMui`  | `beta` | 0.0  |
 | |                     | `p0`           | 1000.0          |
 | |                     | `xi`           | 0.0             |
-| |                     | `rho_s`        | 2500          |      
+| |                     | `rho_s`        | 2500            |      
 | |                     | `grain_diameter`| 0.001          |
 | |                     | `I_ref`        | 0.279           |      
 | |                     | `mu_1`         | 0.382           |      

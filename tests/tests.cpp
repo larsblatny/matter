@@ -350,8 +350,8 @@ TEST(BoundaryTest, MIBF) {
 
     sim_one.M = friction;
     sim_one.q_cohesion = 0;
-    sim_one.perzyna_exp = 1;
-    sim_one.perzyna_visc = 0;
+    sim_one.visc_exponent = 1;
+    sim_one.visc_time = 0;
 
     sim_one.simulate();
 
@@ -401,8 +401,8 @@ TEST(BoundaryTest, MIBF) {
 
     sim_two.M = friction;
     sim_two.q_cohesion = 0;
-    sim_two.perzyna_exp = 1;
-    sim_two.perzyna_visc = 0;
+    sim_two.visc_exponent = 1;
+    sim_two.visc_time = 0;
 
     sim_two.simulate();
 
@@ -458,8 +458,8 @@ TEST(BoundaryTest, MIBF) {
 
     sim_three.M = std::sqrt(3.0)*friction;     // NB
     sim_three.q_cohesion = 0;
-    sim_three.perzyna_exp = 1;
-    sim_three.perzyna_visc = 0;
+    sim_three.visc_exponent = 1;
+    sim_three.visc_time = 0;
 
     sim_three.simulate();
 
@@ -707,8 +707,8 @@ TEST(CollapseTest, DruckerPragerTwo) {
 
     sim.use_pradhana = true;
 
-    sim.perzyna_visc = 0;
-    sim.perzyna_exp = 1;
+    sim.visc_time = 0;
+    sim.visc_exponent = 1;
 
     sim.q_cohesion = 0;
     sim.M = std::tan(30.0 * M_PI / 180.0);
