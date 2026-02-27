@@ -72,15 +72,15 @@ int main(){
     // sim.objects.push_back(std::make_unique<ObjectVdb>("../levelsets/vdb_file_name.vdb", BC::NoSlip, friction));
 
     ////// PLASTICITY
-    sim.plastic_model = PlasticModel::DPVisc; // Perzyna model with Drucker_Prager yield surface
+    sim.plastic_model = PlasticModel::DPVisc; // Viscous model with Drucker_Prager yield surface
 
     sim.use_pradhana = true; // Supress unwanted volume expansion in Drucker-Prager models
     sim.q_prefac = 1.0 / std::sqrt(2.0); // [default: sqrt(1/2)] Prefactor in def. of q, here q = sqrt(1/2 * s:s)
 
     sim.M = std::tan(30*M_PI/180.0); // Internal friction
     sim.q_cohesion = 0; // Yield surface's intercection of q-axis (in Pa), 0 is the cohesionless case
-    sim.perzyna_exp = 1; // Exponent in Perzyna models
-    sim.perzyna_visc = 0; // Viscous time parameter is Perzyna models
+    sim.visc_exponent = 1; // Exponent in viscous models
+    sim.visc_time = 0; // Viscous time parameter
 
     sim.simulate();
 
