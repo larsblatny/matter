@@ -93,6 +93,7 @@ public:
   // Perzyna
   T perzyna_exp = 1;
   T perzyna_visc = 0;
+  bool use_duvaut_lions_formulation = false;
 
   // MCC
   T beta = 0;
