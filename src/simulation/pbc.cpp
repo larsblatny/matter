@@ -16,12 +16,14 @@ void Simulation::PBCAddParticles1D(){
         particles.v.push_back(particles.v[p]);
         particles.F.push_back(particles.F[p]);
         particles.Bmat.push_back(particles.Bmat[p]);
+        particles.tau.push_back(particles.tau[p]);
         num_add_pbc_particles++;
 
         particles.x.push_back(part_x-incr);
         particles.v.push_back(particles.v[p]);
         particles.F.push_back(particles.F[p]);
         particles.Bmat.push_back(particles.Bmat[p]);
+        particles.tau.push_back(particles.tau[p]);
         num_add_pbc_particles++;
 
     } // end loop over p
@@ -53,6 +55,7 @@ void Simulation::PBCAddParticles(unsigned int safety_factor){
                 particles.v.push_back(particles.v[p]);
                 particles.F.push_back(particles.F[p]);
                 particles.Bmat.push_back(particles.Bmat[p]);
+                particles.tau.push_back(particles.tau[p]);
             }
             num_add_pbc_particles++;
             continue; // go directly to next p
@@ -67,6 +70,7 @@ void Simulation::PBCAddParticles(unsigned int safety_factor){
                 particles.v.push_back(particles.v[p]);
                 particles.F.push_back(particles.F[p]);
                 particles.Bmat.push_back(particles.Bmat[p]);
+                particles.tau.push_back(particles.tau[p]);
             }
             num_add_pbc_particles++;
             continue; // go directly to next p
@@ -92,6 +96,7 @@ void Simulation::PBCDelParticles(){
     particles.v.erase(   particles.v.end()   -num_add_pbc_particles, particles.v.end()   );
     particles.F.erase(   particles.F.end()   -num_add_pbc_particles, particles.F.end()   );
     particles.Bmat.erase(particles.Bmat.end()-num_add_pbc_particles, particles.Bmat.end());
+    particles.tau.erase( particles.tau.end() -num_add_pbc_particles, particles.tau.end() );
     Np = particles.x.size();
 
 #ifdef WARNINGS
