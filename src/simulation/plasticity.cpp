@@ -200,9 +200,14 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 T delta_gamma;
 
                 if (visc_exponent == 1 && xi == 0){
-                    delta_gamma = (q_trial-q_yield) / (f_mu_prefac + q_yield*visc_time/dt);
+                    if (use_duvaut_lions_formulation){
+                        delta_gamma = (q_trial-q_yield) / (f_mu_prefac*(1+visc_time/dt));
+                    }
+                    else{ // perzyna
+                        delta_gamma = (q_trial-q_yield) / (f_mu_prefac + q_yield*visc_time/dt);
+                    }
                     if (delta_gamma < 0){
-                        debug("VMVisc: FATAL negative delta_gamma = ", delta_gamma);
+                        debug("DPVisc: FATAL negative delta_gamma = ", delta_gamma);
                         exit = 1;
                     }
                 }
@@ -216,19 +221,33 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                             exit = 1;
                         }
 
-                        T tm = visc_time * delta_gamma + dt;
-                        T tmp = dt / tm;
-                        T tmp1 = std::pow(tmp, visc_exponent);
-
                         q_yield = q_min + (q_max - q_min) * exp(-xi * (particles.eps_pl_dev[p] + (1.0/d_prefac) * delta_gamma));
-
-                        T residual = (q_trial - f_mu_prefac * delta_gamma) * tmp1 - q_yield;
-                        if (std::abs(residual) < 1e-2) {
-                            break;
-                        }
-
                         T q_yield_diff = -xi / d_prefac * (q_max - q_min) * exp(-xi * (particles.eps_pl_dev[p] + (1.0/d_prefac) * delta_gamma));
-                        T residual_diff = -f_mu_prefac * tmp1 + (q_trial - f_mu_prefac * delta_gamma) * visc_exponent * std::pow(tmp, visc_exponent - 1) * (-visc_time * dt) / (tm * tm) - q_yield_diff;
+
+                        T residual;
+                        T residual_diff;
+                        if (use_duvaut_lions_formulation){
+
+                            residual = q_trial - q_yield - f_mu_prefac * ( std::pow(visc_time/dt*delta_gamma, visc_exponent) + delta_gamma );
+                            if (std::abs(residual) < 1e-2) {
+                                break;
+                            }
+                            residual_diff = - q_yield_diff - f_mu_prefac * ( std::pow(visc_time/dt, visc_exponent) * visc_exponent * std::pow(delta_gamma, visc_exponent-1) + 1 );
+
+                        }
+                        else{ // perzyna
+
+                            T tm = visc_time * delta_gamma + dt;
+                            T tmp = dt / tm;
+                            T tmp1 = std::pow(tmp, visc_exponent);
+
+                            T residual = (q_trial - f_mu_prefac * delta_gamma) * tmp1 - q_yield;
+                            if (std::abs(residual) < 1e-2) {
+                                break;
+                            }
+
+                            T residual_diff = -f_mu_prefac * tmp1 + (q_trial - f_mu_prefac * delta_gamma) * visc_exponent * std::pow(tmp, visc_exponent - 1) * (-visc_time * dt) / (tm * tm) - q_yield_diff;
+                        }
 
                         if (std::abs(residual_diff) < 1e-14){ // otherwise division by zero
                             debug("VMVisc: residual_diff too small in abs value = ", residual_diff);
@@ -299,7 +318,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                     if (use_duvaut_lions_formulation){
                         delta_gamma = (q_trial-q_yield) / (f_mu_prefac*(1+visc_time/dt));
                     }
-                    else{
+                    else{ // perzyna
                         delta_gamma = (q_trial-q_yield) / (f_mu_prefac + q_yield*visc_time/dt);
                     }
                     if (delta_gamma < 0){
@@ -307,7 +326,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                         exit = 1;
                     }
                 }
-                else{
+                else{ // perzyna
 
                     delta_gamma = 0.01 * (q_trial - q_yield) / f_mu_prefac; // initial guess
 

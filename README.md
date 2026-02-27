@@ -239,17 +239,20 @@ Here is a list of the various plastic models and their parameters:
 | |                     | `xi`           | 0.0             |  
 | |                     | `visc_exponent` | 1.0            |      
 | |                     | `visc_time`    | 0.0             |  
+| |                     | `use_duvaut_lions_formulation`   |  `false`  |  
 | Viscous Drucker-Prager | `PlasticModel::DPVisc` | `M`  | 1.0  |
 | |                     | `q_cohesion`   | 0.0             |
 | |                     | `use_pradhana` | true            |
 | |                     | `visc_exponent` | 1.0            |      
 | |                     | `visc_time`    | 0.0             |
+| |                     | `use_duvaut_lions_formulation`   |  `false`  | 
 | Viscous Modified Cam-Clay | `PlasticModel::MCCVisc`  | `beta`  | 0.0 |
 | |                     | `p0`           | 1000.0          |
 | |                     | `xi`           | 0.0             |
 | |                     | `M`            | 1.0             |  
 | |                     | `visc_exponent` | 1.0            |      
 | |                     | `visc_time`    | 0.0             |
+| |                     | `use_duvaut_lions_formulation`   |  `false`  | 
 | $\mu(I)$-rheology     | `PlasticModel::DPMui`  | `q_cohesion` | 0.0 |
 | |                     | `use_pradhana` | true            |
 | |                     | `rho_s`        | 2500            |      
