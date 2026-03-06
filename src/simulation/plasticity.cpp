@@ -207,7 +207,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                         delta_gamma = (q_trial-q_yield) / (f_mu_prefac + q_yield*visc_time/dt);
                     }
                     if (delta_gamma < 0){
-                        debug("DPVisc: FATAL negative delta_gamma = ", delta_gamma);
+                        debug("VMVisc: FATAL negative delta_gamma = ", delta_gamma);
                         exit = 1;
                     }
                 }
@@ -215,6 +215,8 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
                     delta_gamma = 0.01 * (q_trial - q_yield) / f_mu_prefac; // initial guess
                     int max_iter = 60;
+                    T residual;
+                    T residual_diff;
                     for (int iter = 0; iter < max_iter; iter++) {
                         if (iter == max_iter - 1){ // did not break loop
                             debug("VMVisc: FATAL did not exit loop at iter = ", iter);
@@ -224,8 +226,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                         q_yield = q_min + (q_max - q_min) * exp(-xi * (particles.eps_pl_dev[p] + (1.0/d_prefac) * delta_gamma));
                         T q_yield_diff = -xi / d_prefac * (q_max - q_min) * exp(-xi * (particles.eps_pl_dev[p] + (1.0/d_prefac) * delta_gamma));
 
-                        T residual;
-                        T residual_diff;
+                                                
                         if (use_duvaut_lions_formulation){
 
                             residual = q_trial - q_yield - f_mu_prefac * ( std::pow(visc_time/dt*delta_gamma, visc_exponent) + delta_gamma );
@@ -241,17 +242,18 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                             T tmp = dt / tm;
                             T tmp1 = std::pow(tmp, visc_exponent);
 
-                            T residual = (q_trial - f_mu_prefac * delta_gamma) * tmp1 - q_yield;
+                            residual = (q_trial - f_mu_prefac * delta_gamma) * tmp1 - q_yield;
                             if (std::abs(residual) < 1e-2) {
                                 break;
                             }
 
-                            T residual_diff = -f_mu_prefac * tmp1 + (q_trial - f_mu_prefac * delta_gamma) * visc_exponent * std::pow(tmp, visc_exponent - 1) * (-visc_time * dt) / (tm * tm) - q_yield_diff;
+                            residual_diff = -f_mu_prefac * tmp1 + (q_trial - f_mu_prefac * delta_gamma) * visc_exponent * std::pow(tmp, visc_exponent - 1) * (-visc_time * dt) / (tm * tm) - q_yield_diff;
                         }
 
-                        if (std::abs(residual_diff) < 1e-14){ // otherwise division by zero
-                            debug("VMVisc: residual_diff too small in abs value = ", residual_diff);
-                            exit = 1;
+                        T diff_tol = 1e-14;
+                        if (std::abs(residual_diff) < diff_tol){ // otherwise division by zero
+                            debug("VMVisc: WARNING residual_diff too small in abs value = ", residual_diff);
+                            residual_diff = (residual_diff >= 0 ? diff_tol : -diff_tol);
                         }
 
                         delta_gamma -= residual / residual_diff;
@@ -362,9 +364,10 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
                         }
 
-                        if (std::abs(residual_diff) < 1e-14){ // otherwise division by zero
-                            debug("DPVisc: FATAL residual_diff too small in abs value = ", residual_diff);
-                            exit = 1;
+                        T diff_tol = 1e-14;
+                        if (std::abs(residual_diff) < diff_tol){ // otherwise division by zero
+                            debug("DPVisc: WARNING residual_diff too small in abs value = ", residual_diff);
+                            residual_diff = (residual_diff >= 0 ? diff_tol : -diff_tol);
                         }
 
                         delta_gamma -= residual / residual_diff;
@@ -628,9 +631,10 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
                                 T residual_diff = -f_mu_prefac * tmp1 + (q_trial - f_mu_prefac * delta_gamma) * visc_exponent * std::pow(tmp, visc_exponent - 1) * (-visc_time * dt) / (tm * tm);
 
-                                if (std::abs(residual_diff) < 1e-14){ // otherwise division by zero
-                                    debug("MCCVisc: FATAL residual_diff too small in abs value = ", residual_diff);
-                                    exit = 1;
+                                T diff_tol = 1e-14;
+                                if (std::abs(residual_diff) < diff_tol){ // otherwise division by zero
+                                    debug("MCCVisc: WARNING residual_diff too small in abs value = ", residual_diff);
+                                    residual_diff = (residual_diff >= 0 ? diff_tol : -diff_tol);
                                 }
 
                                 delta_gamma -= residual / residual_diff;
