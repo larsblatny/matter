@@ -359,7 +359,19 @@ void Simulation::saveInfo(){
              << fps                 << "\n"   // 1
              << dx                  << "\n"   // 2
              << Np                  << "\n"   // 3
-             << particle_volume     << "\n";  // 4
+             << particle_volume     << "\n"   // 4
+             << rho                 << "\n"   // 5
+             << mu                  << "\n"   // 6
+             << q_cohesion          << "\n"   // 7
+             << xi                  << "\n"   // 8
+             << M                   << "\n"   // 9
+             << beta                << "\n"   // 10
+             << p0                  << "\n"   // 11
+             << visc_exponent       << "\n"   // 12
+             << visc_time           << "\n"   // 13
+             << int(use_duvaut_lions_formulation) << "\n"  // 14
+             << int(use_pradhana) << "\n";    // 15
+
     infoFile.close();
 }
 

@@ -292,15 +292,34 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             // if left of shifted tip,
             // => project to the original tip given by cohesion only (i.e., not the shifted tip)
             if ((p_trial+p_shift) < p_tip){
-                T delta_gamma     = d_prefac * hencky_deviatoric_norm;
-                T p_proj          = p_tip; // > p_trial
-                T eps_pl_vol_inst = (p_proj-p_trial)/K; // this can be both positive and negative when using Pradhana!
+                T delta_gamma;
+                T eps_pl_vol_inst, eps_pl_dev_inst;
+                T p_proj = p_tip; // > p_trial
+
+                if (use_duvaut_lions_formulation){ // for simplicity visc_exponent is in this special case assumed to be unity
+                    T b = 1.0 / (1.0 + visc_time / dt); 
+
+                    eps_pl_vol_inst = - b * (p_trial - p_proj) / K;
+                    eps_pl_dev_inst =   b * (q_trial - 0     ) / e_mu_prefac;
+
+                    delta_gamma = d_prefac * eps_pl_dev_inst;
+
+                    T h_vol = - p_trial / K         - eps_pl_vol_inst;
+                    T h_dev = q_trial / e_mu_prefac - eps_pl_dev_inst;
+                    hencky = h_dev * hencky_deviatoric + (h_vol/dim) * TV::Ones();
+                }
+                else{
+                    delta_gamma = d_prefac * hencky_deviatoric_norm;
+                    eps_pl_vol_inst = (p_proj-p_trial)/K; // this can be both positive and negative when using Pradhana!
+                    hencky = -p_proj/(K*dim) * TV::Ones();
+                }
+
                 plastic_count++;
-                hencky = -p_proj/(K*dim) * TV::Ones();
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
                 particles.delta_gamma[p] = delta_gamma / dt;
                 particles.eps_pl_dev[p] += (1.0/d_prefac) * delta_gamma;
                 particles.eps_pl_vol[p] += eps_pl_vol_inst;
+
                 if (use_pradhana)
                     particles.eps_pl_vol_pradhana[p] += eps_pl_vol_inst; // can be negative!
             }
