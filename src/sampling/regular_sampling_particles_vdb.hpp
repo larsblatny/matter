@@ -9,9 +9,9 @@
 
 template <typename S>
 #ifdef THREEDIM
-void RegularSampleParticlesFromVdb(S& sim, ObjectVdb& obj, T ppc = 8)
+void regularSampleParticlesFromVdb(S& sim, ObjectVdb& obj, T ppc = 8)
 #else
-void RegularSampleParticlesFromVdb(S& sim, ObjectVdb& obj, T ppc = 4)
+void regularSampleParticlesFromVdb(S& sim, ObjectVdb& obj, T ppc = 4)
 #endif
 {
 

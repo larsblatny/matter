@@ -8,9 +8,9 @@
 
 template <typename S>
 #ifdef THREEDIM
-void RegularSampleParticles(S& sim, T ppc = 8, unsigned int crop_to_shape = 0)
+void regularSampleParticles(S& sim, T ppc = 8, unsigned int crop_to_shape = 0)
 #else
-void RegularSampleParticles(S& sim, T ppc = 4, unsigned int crop_to_shape = 0)
+void regularSampleParticles(S& sim, T ppc = 4, unsigned int crop_to_shape = 0)
 #endif
 {
     debug("Regular sampling of particles...");
@@ -106,7 +106,7 @@ void RegularSampleParticles(S& sim, T ppc = 4, unsigned int crop_to_shape = 0)
             Ly0 + (j + T(0.5)) * pSpacing
         );
 
-        samples.push_back(point);
+        square_samples.push_back(point);
     }
 
     sim.particle_volume = pSpacing * pSpacing;
