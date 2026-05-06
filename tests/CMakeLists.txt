@@ -7,7 +7,7 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-find_package (Eigen3 3.3 REQUIRED NO_MODULE)
+find_package (Eigen3 REQUIRED NO_MODULE)
 find_package(OpenMP REQUIRED)
 
 
