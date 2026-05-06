@@ -10,7 +10,7 @@ find_path(OPENVDB_INCLUDE_DIRS
 )
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(OPENVDB DEFAULT_MSG
+find_package_handle_standard_args(OpenVDB DEFAULT_MSG
     OPENVDB_LIBRARIES
     OPENVDB_INCLUDE_DIRS
 )

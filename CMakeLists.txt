@@ -2,12 +2,24 @@ cmake_minimum_required(VERSION 3.16)
 SET (CMAKE_CXX_STANDARD 17)
 project(matter)
 
+# Set default build type to Release if not specified
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+
 enable_testing()
+
+# Custom target to clean CMake cache (like make clean for cache)
+add_custom_target(clean-cache
+    COMMAND ${CMAKE_COMMAND} -E remove -f CMakeCache.txt CMakeFiles/cmake.check_cache
+    COMMENT "Removing CMake cache files"
+)
 
 add_subdirectory(src)
 add_subdirectory(tests)
 
-option (USE_VDB "Use OpenVDB part of the code" OFF)
+option (USE_VDB "Use OpenVDB part of the code" ON)
 
 #### Download header files from external Github repos ####
 
