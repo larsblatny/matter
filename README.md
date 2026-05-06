@@ -74,20 +74,20 @@ With _Matter_, you can simulate granular flow on various simple and complex terr
 
 ### Installing dependencies
 
-The required non-header-only dependencies are **[CMake](https://cmake.org/)**, **[OpenMP](https://www.openmp.org/)**. The standard C++ linear algebra template library **[Eigen](https://eigen.tuxfamily.org/)** is required. The option `-DUSE_VDB=ON` also requires **[OpenVDB](https://www.openvdb.org/)**, however, this can be turned off if only analytic objects are used. 
+The required non-header-only dependencies are **[CMake](https://cmake.org/)**, **[OpenMP](https://www.openmp.org/)**. The standard C++ linear algebra template library **[Eigen](https://eigen.tuxfamily.org/)** is required. **[OpenVDB](https://www.openvdb.org/)** is optional, however, needed if vdb-files are used as input (either as terrain/objects or as particle sampling domain). 
 
 ##### Linux
-Install all dependencies with this simple command:        
+Install all the above dependencies with this simple command:        
 `sudo apt-get install -y cmake libeigen3-dev libopenvdb-dev libtbb-dev libboost-all-dev libilmbase-dev libopenexr-dev`    
-where only `cmake` and `libeigen3-dev` are required. 
+where only `cmake` and `libeigen3-dev` are strictly required. 
 
 ##### MacOS
 You can download/install the required dependencies with [Homebrew](https://brew.sh/) through   
-`brew install cmake eigen libomp`    
-and OpenVDB with (although this may require other dependecies, see https://formulae.brew.sh/formula/openvdb)    
-`brew install openvdb`    
+`brew install cmake eigen libomp openvdb`    
+although OpenVDB may require other dependecies, see https://formulae.brew.sh/formula/openvdb. 
+    
 
-However, we recommend instead using [VSCode Dev Containers](https://code.visualstudio.com/docs/devcontainers/tutorial). 
+However, if not using Linux, we recommend instead using [VSCode Dev Containers](https://code.visualstudio.com/docs/devcontainers/tutorial). 
 Download [VSCode](https://code.visualstudio.com/) and [Docker](https://www.docker.com/products/docker-desktop/). In VSCode, install the "Dev Containers" extension. When you open the Matter repository in VSCode, you will be asked if you want to run it in a container. When you accept, a container will be set up and you are ready to simulate!
 
 
@@ -101,10 +101,10 @@ Download [VSCode](https://code.visualstudio.com/) and [Docker](https://www.docke
 3. Enter the build directory:    
    `cd build`
    
-4. Specify CMake options:     
-   `cmake -DCMAKE_BUILD_TYPE=Release -DUSE_VDB=ON ..`     
-   or    
-   `cmake -DCMAKE_BUILD_TYPE=Release -DUSE_VDB=OFF ..`       
+4. Specify CMake options. Use default options (release mode and use OpenVDB):     
+   `cmake ..`     
+   or optionally specify     
+   `cmake -DCMAKE_BUILD_TYPE=Debug -DUSE_VDB=OFF ..`       
 
 5. Compile (NB: the number of threads for the _simulation_ is specified in `mpm.cpp`)      
    `make -j <number of cores for compilation>` 
@@ -115,6 +115,7 @@ Download [VSCode](https://code.visualstudio.com/) and [Docker](https://www.docke
 7. [Optional] Tests:       
    Run all tests with `make test` or `ctest`. Run single test with `ctest -R <name of test>`
  
+You can "clean" using `make clean` and `make clean-cache`, e.g., if you want to change CMake options.
 
 ### Example of setup file
 

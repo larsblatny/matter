@@ -359,7 +359,41 @@ void Simulation::saveInfo(){
              << fps                 << "\n"   // 1
              << dx                  << "\n"   // 2
              << Np                  << "\n"   // 3
-             << particle_volume     << "\n";  // 4
+             << particle_volume     << "\n"   // 4
+             << particle_mass       << "\n"   // 5
+             << rho                 << "\n"   // 6
+             << E                   << "\n"   // 7
+             << nu                  << "\n"   // 8
+             << K                   << "\n"   // 9
+             << lambda              << "\n"   // 10
+             << mu                  << "\n"   // 11
+             << wave_speed          << "\n"   // 12
+             << cfl                 << "\n"   // 13
+             << cfl_elastic         << "\n"   // 14
+             << flip_ratio          << "\n"   // 15
+             << q_prefac            << "\n"   // 16
+             << q_max               << "\n"   // 17
+             << q_min               << "\n"   // 18
+             << p_min               << "\n"   // 19
+             << q_cohesion          << "\n"   // 20
+             << xi                  << "\n"   // 21
+             << M                   << "\n"   // 22
+             << beta                << "\n"   // 23
+             << p0                  << "\n"   // 24
+             << fac_Q               << "\n"   // 25
+             << rho_s               << "\n"   // 26
+             << grain_diameter      << "\n"   // 27
+             << mu_1                << "\n"   // 28
+             << mu_2                << "\n"   // 29
+             << I_ref               << "\n"   // 30
+             << visc_exponent       << "\n"   // 31
+             << visc_time           << "\n"   // 32
+             << gravity_time        << "\n"   // 33
+             << int(use_mibf)       << "\n"   // 34
+             << int(use_musl)       << "\n"   // 35
+             << int(use_duvaut_lions_formulation) << "\n"  // 36
+             << int(use_pradhana)   << "\n";  // 37
+
     infoFile.close();
 }
 

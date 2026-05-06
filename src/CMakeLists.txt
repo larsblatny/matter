@@ -1,4 +1,6 @@
-find_package (Eigen3 3.3 REQUIRED NO_MODULE)
+cmake_policy(SET CMP0167 OLD)
+
+find_package (Eigen3 REQUIRED NO_MODULE)
 find_package(OpenMP REQUIRED)
 
 add_executable(mpm
