@@ -273,6 +273,10 @@ void Simulation::moveObjects(){
     for (auto& obj : plates) {
         obj->move(dt, frame_dt, time);
     }
+
+    for (auto& obj : objects) {
+        obj->move(time);
+    }
 }
 
 
