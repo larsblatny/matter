@@ -1,3 +1,5 @@
+# Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
+
 cmake_minimum_required(VERSION 3.16)
 SET (CMAKE_CXX_STANDARD 17)
 project(matter)

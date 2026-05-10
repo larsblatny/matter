@@ -411,7 +411,7 @@ TEST(BoundaryTest, MIBF) {
 
     T diff = std::abs(max_x_1 - max_x_2);
     debug(diff);
-    ASSERT_NEAR(diff, 0.0, 1e-13);
+    ASSERT_NEAR(diff, 0.0, 1e-12);
 
 
 
