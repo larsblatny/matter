@@ -1,4 +1,6 @@
-cmake_policy(SET CMP0167 OLD)
+# Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
+
+# cmake_policy(SET CMP0167 OLD)
 
 include(FetchContent)
 FetchContent_Declare(
