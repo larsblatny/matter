@@ -20,6 +20,7 @@ typedef double T; // float or double
 // #define THREEDIM // Uncomment for 2D
 #define SPLINEDEG 2 // Quadratic B-spline
 // #define WARNINGS // Write more debug info to screen
+#define ENERGY // Uncomment to perform energy balance
 ///////////////////////////////////////////////////
 
 
@@ -104,6 +105,23 @@ inline T selfDoubleDot(TM& A){
 
     return out;
 }
+
+#ifdef ENERGY  // Added double dot operation for computation of Ed
+// Maybe this function can be added by default for simplicity
+inline T doubleDot(TM& A, TM& B){
+
+    #ifdef THREEDIM
+    T out = A(0,0)*B(0,0) + A(0,1)*B(0,1) + A(0,2)*B(0,2)
+          + A(1,0)*B(1,0) + A(1,1)*B(1,1) + A(1,2)*B(1,2)
+          + A(2,0)*B(2,0) + A(2,1)*B(2,1) + A(2,2)*B(2,2);
+    #else
+    T out = A(0,0)*B(0,0) + A(0,1)*B(0,1)
+          + A(1,0)*B(1,0) + A(1,1)*B(1,1);
+    #endif
+
+    return out;
+}
+#endif
 
 #if SPLINEDEG == 3
 

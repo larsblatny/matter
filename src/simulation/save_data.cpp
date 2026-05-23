@@ -10,6 +10,13 @@ void Simulation::saveParticleData(std::string extra){
     std::vector<T> devstress_vec(Np);
     std::vector<T> Je_vec(Np);
 
+#ifdef ENERGY
+    std::vector<T> Ek(Np); // Kinetic energy
+    std::vector<T> Eg(Np); // Gravitational potential energy
+    std::vector<T> Ee(Np); // Elastic energy
+    // Ed is energy dissipated through irreversible deformation (plastic or viscoplastic)
+#endif
+
     #pragma omp parallel for num_threads(n_threads)
     for(int p = 0; p < Np; p++){
 
@@ -34,6 +41,32 @@ void Simulation::saveParticleData(std::string extra){
         pressure_vec[p] = pressure;
         devstress_vec[p] = devstress;
         Je_vec[p] = Je;
+
+    #ifdef ENERGY
+      #ifdef THREEDIM
+        Ek[p] = 0.5 * particle_mass * ( particles.v[p][0]*particles.v[p][0] + particles.v[p][1]*particles.v[p][1] + particles.v[p][2]*particles.v[p][2]);
+      #else
+        Ek[p] = 0.5 * particle_mass * ( particles.v[p][0]*particles.v[p][0] + particles.v[p][1]*particles.v[p][1] );
+      #endif
+        Eg[p] = particle_mass * 9.81 * particles.x[p][1];
+        
+        // Elastic energy computed from elastic energy density function
+        T J = Je * std::exp( particles.eps_pl_vol[p] );
+        if (elastic_model == ElasticModel::NeoHookean){
+            T log_J = std::log(J);
+            Ee[p] = particle_volume * ( 0.5 * lambda * log_J*log_J + 0.5 * mu * (selfDoubleDot(Fe) - dim - 2*log_J ) );
+        }
+        else if (elastic_model == ElasticModel::Hencky){ // St Venant Kirchhoff with Hencky strain
+            Eigen::JacobiSVD<TM> svd(Fe, Eigen::ComputeFullU | Eigen::ComputeFullV);
+            TV hencky_singular = svd.singularValues().array().abs().max(1e-4).log();
+            T  hencky_trace = hencky_singular.sum();
+            TM hencky = svd.matrixU() * hencky_singular.matrix().asDiagonal() * svd.matrixV().transpose();
+            Ee[p] = particle_volume * ( 0.5 * lambda * hencky_trace * hencky_trace + mu * (hencky*hencky).trace() );
+        }
+        else{
+            debug("You specified an unvalid ELASTIC model!");
+        }
+    #endif
     }
 
 
@@ -106,6 +139,44 @@ void Simulation::saveParticleData(std::string extra){
         reinterpret_cast<uint8_t*>(Je_vec.data()),
         tinyply::Type::INVALID,
         0);
+
+  #ifdef ENERGY
+    file.add_properties_to_element(
+        "vertex",
+        { "Ek" },
+        type,
+        Ek.size(),
+        reinterpret_cast<uint8_t*>(Ek.data()),
+        tinyply::Type::INVALID,
+        0);  
+
+    file.add_properties_to_element(
+        "vertex",
+        { "Eg" },
+        type,
+        Eg.size(),
+        reinterpret_cast<uint8_t*>(Eg.data()),
+        tinyply::Type::INVALID,
+        0);  
+
+    file.add_properties_to_element(
+        "vertex",
+        { "Ee" },
+        type,
+        Ee.size(),
+        reinterpret_cast<uint8_t*>(Ee.data()),
+        tinyply::Type::INVALID,
+        0);  
+
+    file.add_properties_to_element(
+        "vertex",
+        { "Ed" },
+        type,
+        particles.Ed.size(),
+        reinterpret_cast<uint8_t*>(particles.Ed.data()),
+        tinyply::Type::INVALID,
+        0);
+  #endif
 
     if (plastic_model != PlasticModel::NoPlasticity){
 

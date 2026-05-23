@@ -23,6 +23,11 @@ public:
       F.resize(Np); std::fill( F.begin(), F.end(), TM::Identity() );
       Bmat.resize(Np); std::fill( Bmat.begin(), Bmat.end(), TM::Zero() );
       tau.resize(Np); std::fill( tau.begin(), tau.end(), TM::Zero() );
+
+    #ifdef ENERGY
+      Ed.resize(Np); std::fill( Ed.begin(), Ed.end(), 0.0 ); // Ed is energy dissipated through irreversible deformation (plastic or viscoplastic)
+      // Must be computed incrementaly at every time step
+    #endif
   }
 
   std::vector<TV> x;
@@ -41,7 +46,9 @@ public:
   std::vector<TM> Bmat;
   std::vector<TM> tau;
 
-
+#ifdef ENERGY
+  std::vector<T> Ed;
+#endif
 };
 
 class Grid{
