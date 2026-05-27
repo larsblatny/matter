@@ -45,6 +45,7 @@ public:
   bool save_grid = false;
   bool use_mibf = false;
   bool use_musl = false;
+  bool calculate_energy = false;
 
   TV grid_reference_point = 2e10 * TV::Ones();
   TV gravity = TV::Zero();
@@ -227,6 +228,7 @@ private:
 #endif
 }; // end Simulation class
 
+// These functions are not used anymore (now done in plasticity.cpp):
 inline TM Simulation::NeoHookeanPiola(TM & Fe){
     return mu * (Fe - Fe.transpose().inverse()) + lambda * std::log(Fe.determinant()) * Fe.transpose().inverse();
 } // end NeoHookeanPiola

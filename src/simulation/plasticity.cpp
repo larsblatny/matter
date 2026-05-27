@@ -58,11 +58,8 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
                 hencky -= delta_gamma * hencky_deviatoric;
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
-                particles.eps_pl_dev[p] += delta_gamma;
-
-              #ifdef ENERGY
                 eps_pl_dev_inst = delta_gamma;
-              #endif
+                particles.eps_pl_dev[p] += eps_pl_dev_inst;
 
             } // end plastic projection
 
@@ -86,13 +83,12 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
                 T delta_gamma = d_prefac * hencky_deviatoric_norm;
                 particles.delta_gamma[p] = delta_gamma / dt;
-                particles.eps_pl_dev[p] += (1.0/d_prefac) * delta_gamma;
-                particles.eps_pl_vol[p] += (p_proj-p_trial)/K;
-              
-              #ifdef ENERGY
                 eps_pl_dev_inst = (1.0/d_prefac) * delta_gamma;
                 eps_pl_vol_inst = (p_proj-p_trial)/K;
-              #endif 
+
+                particles.eps_pl_dev[p] += eps_pl_dev_inst;
+                particles.eps_pl_vol[p] += eps_pl_vol_inst;
+                              
             }
             else{ // right of tip
                 T delta_gamma = d_prefac * (hencky_deviatoric_norm - q_yield / e_mu_prefac);
@@ -103,11 +99,9 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
                     hencky -= (1.0/d_prefac) * delta_gamma * hencky_deviatoric;
                     particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
-                    particles.eps_pl_dev[p] += (1.0/d_prefac) * delta_gamma;
-                  
-                  #ifdef ENERGY
+                    
                     eps_pl_dev_inst = (1.0/d_prefac) * delta_gamma;
-                  #endif 
+                    particles.eps_pl_dev[p] += eps_pl_dev_inst;
                 }
             } // if else side of tip
 
@@ -139,16 +133,13 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
                 T delta_gamma = d_prefac * hencky_deviatoric_norm;
                 particles.delta_gamma[p] = delta_gamma / dt;
-                particles.eps_pl_dev[p] += (1.0/d_prefac) * delta_gamma;
+                eps_pl_dev_inst = (1.0/d_prefac) * delta_gamma;
+                particles.eps_pl_dev[p] += eps_pl_dev_inst;
 
                 eps_pl_vol_inst = (p_proj-p_trial)/K;
                 particles.eps_pl_vol[p] += eps_pl_vol_inst;
                 if (use_pradhana)
                     particles.eps_pl_vol_pradhana[p] += eps_pl_vol_inst; // can be negative!
-
-              #ifdef ENERGY
-                eps_pl_dev_inst = (1.0/d_prefac) * delta_gamma;
-              #endif 
             }
 
             // right of tip AND inside yield surface, i.e., elastic states
@@ -169,7 +160,8 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 if ((p_trial+p_shift) < p_proj){
                     T delta_gamma             = d_prefac * hencky_deviatoric_norm;
                     particles.delta_gamma[p]  = delta_gamma / dt;
-                    particles.eps_pl_dev[p]  += (1.0/d_prefac) * delta_gamma;
+                    eps_pl_dev_inst = (1.0/d_prefac) * delta_gamma;
+                    particles.eps_pl_dev[p] += eps_pl_dev_inst;
 
                     eps_pl_vol_inst = (p_proj-p_trial)/K;
                     particles.eps_pl_vol[p] += eps_pl_vol_inst;
@@ -178,10 +170,6 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
                     hencky = -p_proj/(K*dim) * TV::Ones();
                     particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
-
-                  #ifdef ENERGY
-                    eps_pl_dev_inst = (1.0/d_prefac) * delta_gamma;
-                  #endif 
                 }
                 // if right of tip: p_trial becomes p
                 else{
@@ -189,14 +177,11 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                     T delta_gamma = d_prefac * (hencky_deviatoric_norm - q_yield_new / e_mu_prefac);
                     hencky -= (1.0/d_prefac) * delta_gamma * hencky_deviatoric;
                     particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
-                    particles.eps_pl_dev[p] += (1.0/d_prefac) * delta_gamma;
+                    eps_pl_dev_inst = (1.0/d_prefac) * delta_gamma;
+                    particles.eps_pl_dev[p] += eps_pl_dev_inst;
                     particles.delta_gamma[p] = delta_gamma / dt;
                     if (use_pradhana)
                         particles.eps_pl_vol_pradhana[p] = 0; // reset volume accumulation
-
-                  #ifdef ENERGY
-                    eps_pl_dev_inst = (1.0/d_prefac) * delta_gamma;
-                  #endif 
                 }
             } // end plastic projection projection
 
@@ -291,14 +276,13 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                     } // end N-R iterations
                 } // end if visc_exponent > 1
 
-                hencky -= (1.0/d_prefac) * delta_gamma * hencky_deviatoric;
+                eps_pl_dev_inst = (1.0/d_prefac) * delta_gamma;
+                hencky -= eps_pl_dev_inst * hencky_deviatoric;
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
-                particles.eps_pl_dev[p] += (1.0/d_prefac) * delta_gamma;
+                
+                particles.eps_pl_dev[p] += eps_pl_dev_inst;
                 particles.delta_gamma[p] = delta_gamma / dt;
 
-              #ifdef ENERGY
-                eps_pl_dev_inst = (1.0/d_prefac) * delta_gamma;
-              #endif 
             } // end plastic projection projection
 
         } // end VMVisc
@@ -341,18 +325,16 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 else{
                     delta_gamma = d_prefac * hencky_deviatoric_norm;
                     eps_pl_vol_inst = (p_proj-p_trial)/K; // this can be both positive and negative when using Pradhana!
+                    eps_pl_dev_inst = hencky_deviatoric_norm;
                     hencky = -p_proj/(K*dim) * TV::Ones();
                 }
 
                 plastic_count++;
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
                 particles.delta_gamma[p] = delta_gamma / dt;
-                particles.eps_pl_dev[p] += (1.0/d_prefac) * delta_gamma;
+                
+                particles.eps_pl_dev[p] += eps_pl_dev_inst;
                 particles.eps_pl_vol[p] += eps_pl_vol_inst;
-
-              #ifdef ENERGY
-                eps_pl_dev_inst = (1.0/d_prefac) * delta_gamma;
-              #endif 
 
                 if (use_pradhana)
                     particles.eps_pl_vol_pradhana[p] += eps_pl_vol_inst; // can be negative!
@@ -381,7 +363,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                         exit = 1;
                     }
                 }
-                else{ // perzyna
+                else{ // exponent not equal to one
 
                     delta_gamma = 0.01 * (q_trial - q_yield) / f_mu_prefac; // initial guess
 
@@ -439,13 +421,14 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                         particles.muI[p] = ((q_trial - f_mu_prefac * delta_gamma) - q_cohesion) / (p_trial + p_shift);
                 }
 
-                hencky -= (1.0/d_prefac) * delta_gamma * hencky_deviatoric;
+                eps_pl_dev_inst = (1.0/d_prefac) * delta_gamma;
+                hencky -= eps_pl_dev_inst * hencky_deviatoric;
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
-                particles.eps_pl_dev[p] += (1.0/d_prefac) * delta_gamma;
+                particles.eps_pl_dev[p] += eps_pl_dev_inst;
                 particles.delta_gamma[p] = delta_gamma / dt;
 
               #ifdef ENERGY
-                eps_pl_dev_inst = (1.0/d_prefac) * delta_gamma;
+                
               #endif 
             } // end plastic projection
         } // end DPVisc
@@ -468,18 +451,18 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             // if left of shifted tip,
             // => project to the original tip given by cohesion only (i.e., not the shifted tip)
             if ((p_trial+p_shift) < p_tip){
-                T delta_gamma     = d_prefac * hencky_deviatoric_norm;
-                eps_pl_vol_inst = (p_tip-p_trial)/K;
+                eps_pl_vol_inst = (p_tip-p_trial) / K;
+                eps_pl_dev_inst = hencky_deviatoric_norm;
                 plastic_count++;
                 hencky = -p_tip/(K*dim) * TV::Ones();
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
-                particles.delta_gamma[p]          = delta_gamma;               // NB!
-                particles.eps_pl_dev[p]          += (1.0/d_prefac) * delta_gamma;
+                particles.delta_gamma[p]          = d_prefac * eps_pl_dev_inst / dt;
+                particles.eps_pl_dev[p]          += eps_pl_dev_inst;
                 particles.eps_pl_vol[p]          += eps_pl_vol_inst;
                 particles.eps_pl_vol_pradhana[p] += eps_pl_vol_inst; // can be negative!
 
               #ifdef ENERGY
-                eps_pl_dev_inst = (1.0/d_prefac) * delta_gamma;
+                
               #endif 
             }
             else{ // if right of shifted tip (incl elastic states)
@@ -508,16 +491,14 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 particles.viscosity[p] = (mu_i - mu_1) * p_special / delta_gamma;
 
                 delta_gamma *= dt; // this is the actual delta_gamma
-
-                hencky -= (1.0/d_prefac) * delta_gamma * hencky_deviatoric;
-                particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
-                particles.eps_pl_dev[p] += (1.0/d_prefac) * delta_gamma;
                 particles.delta_gamma[p] = delta_gamma / dt;
 
-              #ifdef ENERGY
                 eps_pl_dev_inst = (1.0/d_prefac) * delta_gamma;
-              #endif 
+                particles.eps_pl_dev[p] += eps_pl_dev_inst;
 
+                hencky -= eps_pl_dev_inst * hencky_deviatoric;
+                particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
+                
             } // end plastic projection
 
         } // end DPMui
@@ -592,12 +573,9 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                     particles.viscosity[p] = (mu_i - mu_1) * std::sqrt((p_c-p_stress)*p_special) / gamma_dot_S;
 
                     T delta_gamma = (q_trial - q_stress) / f_mu_prefac;
-                    particles.eps_pl_dev[p] += (1.0/d_prefac) * delta_gamma;
-                    particles.delta_gamma[p] = delta_gamma / dt;
-
-                  #ifdef ENERGY
                     eps_pl_dev_inst = (1.0/d_prefac) * delta_gamma;
-                  #endif 
+                    particles.eps_pl_dev[p] += eps_pl_dev_inst;
+                    particles.delta_gamma[p] = delta_gamma / dt;
                 }
 
                 hencky = q_stress / e_mu_prefac * hencky_deviatoric - ep*TV::Ones();
@@ -759,12 +737,6 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             } // end if perform_rma
         } // end MCC or MCCVisc
 
-      #ifdef ENERGY
-        TV eps_VP = (eps_pl_vol_inst/dim) * TV::Ones() + eps_pl_dev_inst * hencky_deviatoric;
-        TM ld_over_dt =  svd.matrixU() * eps_VP.array().matrix().asDiagonal() * svd.matrixU().transpose(); // ld : velocity gradient of dissipative deformation
-        particles.Ed[p] += particle_volume * doubleDot(particles.tau[p], ld_over_dt);
-        // ld -> dividing by dt ; Ep -> multiplying by dt. Removed dt for efficiency.
-      #endif
 
         // Get new stress
         TM Fe = particles.F[p];
@@ -773,13 +745,20 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             dPsidF = mu * (Fe - Fe.transpose().inverse()) + lambda * std::log(Fe.determinant()) * Fe.transpose().inverse();
             particles.tau[p] = dPsidF * Fe.transpose();
         }
-        else if (elastic_model == ElasticModel::Hencky){ // St Venant Kirchhoff with Hencky strain
+        else if (elastic_model == ElasticModel::Hencky){
             T e_trace = hencky.sum();
             TV Kirchhoff_principal = lambda*e_trace*TV::Ones() + T(2.)*mu*hencky;
             particles.tau[p] = svd.matrixU() * Kirchhoff_principal.array().matrix().asDiagonal() * svd.matrixU().transpose();
         }
         else{
             debug("You specified an unvalid ELASTIC model!");
+        }
+
+
+        if (calculate_energy){
+            TV eps_pl_inst = (eps_pl_vol_inst/dim) * TV::Ones() + eps_pl_dev_inst * hencky_deviatoric;
+            TM eps_pl_inst_matrix =  svd.matrixU() * eps_pl_inst.array().matrix().asDiagonal() * svd.matrixU().transpose(); // = (plastic velocity gradient) * dt
+            particles.Ed[p] += particle_volume * doubleDot(particles.tau[p], eps_pl_inst_matrix);
         }
 
     } // end plastic_model type
