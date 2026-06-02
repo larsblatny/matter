@@ -211,6 +211,10 @@ void Simulation::simulate(){
 
 
 void Simulation::advanceStep(){
+
+    for (auto& obj: objects) obj->force.setZero();
+    for (auto& obj: plates) obj->force.setZero();
+
     updateDt();
 
     if (pbc){
@@ -264,6 +268,8 @@ void Simulation::advanceStep(){
     positionUpdate();
 
     moveObjects();
+
+    saveForces();
 
 } // end advanceStep
 

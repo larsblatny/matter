@@ -2,7 +2,7 @@
 
 #include "simulation.hpp"
 
-void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
+void Simulation::boundaryCollision(T mi, int index, TV Xi, TV& vi){
 
     // Make a copy
     TV vi_orig = vi;
@@ -71,6 +71,13 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
             }
 
             vi = v_rel + v_object;
+
+            if (obj->force_calc == true){
+                #pragma omp critical 
+                {
+                    obj->force += (mi / dt) * (vi_orig - vi);
+                }
+            }
 
             // update velocity copy before next iteration
             vi_orig = vi; // Comment this line to enforce ordering of objects (i.e., use only last object in list)
@@ -254,6 +261,13 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
             vi(1) = vy_rel + obj->vy_object;
             vi(2) = vz_rel + obj->vz_object;
 
+            if (obj->force_calc == true){
+                #pragma omp critical 
+                {
+                    obj->force += (mi / dt) * (vi_orig - vi);
+                }
+            }
+
             // update velocity copy before next iteration
             vi_orig = vi; // Comment this line to enforce ordering of objects (i.e., use only last object in list)
 
@@ -382,6 +396,13 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
 
             vi(0) = vx_rel + obj->vx_object;
             vi(1) = vy_rel + obj->vy_object;
+
+            if (obj->force_calc == true){
+                #pragma omp critical 
+                {
+                    obj->force += (mi / dt) * (vi_orig - vi);
+                }
+            }
 
             // update velocity copy before next iteration 
             vi_orig = vi; // Comment this line to enforce ordering of objects (i.e., use only last object in list)

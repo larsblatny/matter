@@ -47,7 +47,7 @@ void Simulation::explicitEulerUpdate(){
                     TV Xi(grid.x[i], grid.y[j]);
 #endif
 
-                    boundaryCollision(index, Xi, new_vi);
+                    boundaryCollision(mi, index, Xi, new_vi);
 
                     // TODO:
                     // boundaryCorrection(new_xi, new_yi, new_vxi, new_vyi);

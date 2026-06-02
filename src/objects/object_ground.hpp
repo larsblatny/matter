@@ -11,7 +11,7 @@ public:
 
     ~ObjectGround(){}
 
-    ObjectGround(BC bc_in = BC::NoSlip, T friction_in = 0.0, std::string name_in = "", T y_ground_in = 0) : ObjectGeneral(bc_in, friction_in, name_in), y_ground(y_ground_in) {}
+    ObjectGround(BC bc_in = BC::NoSlip, T friction_in = 0.0, std::string name_in = "ground", bool force_calc_in = false, T y_ground_in = 0) : ObjectGeneral(bc_in, friction_in, name_in, force_calc_in), y_ground(y_ground_in) {}
 
     bool inside(const TV& X_in) const override {
 

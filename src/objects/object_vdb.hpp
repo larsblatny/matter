@@ -26,7 +26,7 @@ public:
 
     ~ObjectVdb(){}
 
-    ObjectVdb(std::string filename, BC bc_in = BC::NoSlip, T friction_in = 0.0, std::string name_in = "") : ObjectGeneral(bc_in, friction_in, name_in) {
+    ObjectVdb(std::string filename, BC bc_in = BC::NoSlip, T friction_in = 0.0, std::string name_in = "vdb", bool force_calc_in = false) : ObjectGeneral(bc_in, friction_in, name_in, force_calc_in) {
 
         openvdb::io::File file(filename);
         file.open();

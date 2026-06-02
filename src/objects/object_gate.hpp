@@ -11,7 +11,7 @@ public:
 
     ~ObjectGate(){}
 
-    ObjectGate(BC bc_in, T friction_in, std::string name_in = "", T height_in = 0.016) : ObjectGeneral(bc_in, friction_in, name_in), height(height_in) {}
+    ObjectGate(BC bc_in, T friction_in, std::string name_in = "gate", bool force_calc_in = false, T height_in = 0.016) : ObjectGeneral(bc_in, friction_in, name_in, force_calc_in), height(height_in) {}
 
     bool inside(const TV& X_in) const override {
 

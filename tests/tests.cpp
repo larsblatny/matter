@@ -8,6 +8,7 @@
 
 #include "../src/objects/object_curve.hpp"
 #include "../src/objects/object_ground.hpp"
+#include "../src/objects/object_ground_rotated.hpp"
 
 
 TEST(BoundaryTest, AnalyticSlipFree) {
@@ -730,4 +731,189 @@ TEST(CollapseTest, DruckerPragerTwo) {
     T diff = std::abs(max_x - 0.56);
     debug("diff:   ", diff);
     ASSERT_NEAR(diff, 0.0, 0.011);
+}
+
+TEST(ForceTest, NoSlipGround) {
+
+    Simulation sim;
+    sim.initialize(false);
+
+    sim.end_frame = 10;  
+    sim.fps = 10;     
+    sim.n_threads = 8;  
+    sim.cfl = 0.5;
+    sim.flip_ratio = 0; 
+
+    sim.gravity[1] = -9.81; 
+
+    sim.Lx = 1;
+    sim.Ly = 1;
+    #ifdef THREEDIM
+        sim.Lz = 0.1; 
+    #endif
+
+    T friction = 0;
+    T y_ground = 0;
+    std::string name = "ground";
+
+    sim.objects.push_back(std::make_unique<ObjectGround>(BC::NoSlip, friction, name, true, y_ground));      
+
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.plastic_model = PlasticModel::NoPlasticity; 
+
+    sim.E = 1e10;
+    sim.nu = 0.3;  
+    sim.rho = 400;     
+
+    sampleParticles(sim, 0.2);
+
+    sim.simulate();
+
+    TV obj_force = TV::Zero();
+    for (auto& obj: sim.objects){
+        obj_force = obj->force;
+    }
+
+    #ifdef THREEDIM
+        T exp_force = sim.rho * sim.Lx * sim.Ly * sim.Lz * sim.gravity[1];
+    #else
+        T exp_force = sim.rho * sim.Lx * sim.Ly * sim.gravity[1];
+    #endif
+
+    T com_force = obj_force(1);
+    T diff = std::abs(exp_force - com_force)/exp_force;
+
+    ASSERT_NEAR(diff, 0.0, 1e-3);
+
+}
+
+TEST(ForceTest, SlipFreeRotatedGround) {
+
+    Simulation sim;
+    sim.initialize(false);
+
+    sim.end_frame = 10; 
+    sim.fps = 10;           
+    sim.n_threads = 8;     
+    sim.cfl = 0.5;         
+    sim.flip_ratio = 0;
+
+    T theta_deg = 10.0;
+    T theta = theta_deg * (M_PI / 180.0);
+    T cos_theta = std::cos(theta); 
+    T sin_theta = std::sin(theta);
+
+    T theta_r_deg = 0;
+    T theta_r = theta_r_deg * (M_PI / 180.0);
+
+    T friction = std::tan(theta_r);
+
+    sim.gravity[1] = -9.81;
+
+    sim.Lx = 1;
+    sim.Ly = 1;
+    #ifdef THREEDIM
+        sim.Lz = 0.1;
+    #endif
+
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.plastic_model = PlasticModel::NoPlasticity; 
+
+    sim.E = 1e10;  
+    sim.rho = 400;        
+    sim.nu = 0.3;   
+
+    sampleParticles(sim, 0.1);
+
+    for(int p = 0; p < sim.Np; p++){
+
+        T x_new = sim.particles.x[p](1) * cos_theta - sim.particles.x[p](0) * sin_theta;
+        T z_new = sim.particles.x[p](1) * sin_theta + sim.particles.x[p](0) * cos_theta;
+
+        sim.particles.x[p](1) = x_new;
+        sim.particles.x[p](0) = z_new;
+
+    }
+
+    sim.objects.push_back(std::make_unique<ObjectGroundRotated>(BC::SlipFree, friction, "ground_rotated", true, theta));      
+
+    sim.simulate();
+
+    TV obj_force = TV::Zero();
+    for (auto& obj: sim.objects){
+        obj_force = obj->force;
+    }
+
+    #ifdef THREEDIM
+        T exp_force_1 = (sim.rho * sim.Lx * sim.Ly * sim.Lz * sim.gravity[1] * cos_theta) * (sin_theta - friction * cos_theta);
+        T exp_force_2 = (sim.rho * sim.Lx * sim.Ly * sim.Lz * sim.gravity[1] * cos_theta) * (cos_theta + friction * sin_theta);
+    #else
+        T exp_force_1 = (sim.rho * sim.Lx * sim.Ly * sim.gravity[1] * cos_theta) * (sin_theta - friction * cos_theta);
+        T exp_force_2 = (sim.rho * sim.Lx * sim.Ly * sim.gravity[1] * cos_theta) * (cos_theta + friction * sin_theta);
+    #endif
+
+    T com_force_1 = obj_force(0);
+    T com_force_2 = obj_force(1);
+
+    T diff_1 = std::abs(exp_force_1 - com_force_1)/exp_force_1;
+    T diff_2 = std::abs(exp_force_2 - com_force_2)/exp_force_2;
+
+    ASSERT_NEAR(diff_1, 0.0, 1e-3);
+    ASSERT_NEAR(diff_2, 0.0, 1e-3);
+
+}
+
+TEST(ForceTest, NoSlipPlate) {
+
+    Simulation sim;
+    sim.initialize(false);
+
+    sim.end_frame = 10;  
+    sim.fps = 10;     
+    sim.n_threads = 8;  
+    sim.cfl = 0.5;
+    sim.flip_ratio = 0; 
+
+    sim.gravity[1] = -9.81; 
+
+    sim.Lx = 1;
+    sim.Ly = 1;
+    #ifdef THREEDIM
+        sim.Lz = 0.1;
+    #endif
+
+    T friction = 0;
+
+    #ifdef THREEDIM
+        sim.plates.push_back(std::make_unique<ObjectPlate>(0, PlateType::bottom, BC::NoSlip, friction, -1, 2, 0.0, 0.0, 0.0, 0.0, 0.0, "bottom_plate", true));
+    #else
+        sim.plates.push_back(std::make_unique<ObjectPlate>(0, PlateType::bottom, BC::NoSlip, friction, -1, 2, 0.0, 0.0, 0.0, 0.0, "bottom_plate", true));  
+    #endif
+    
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.plastic_model = PlasticModel::NoPlasticity; 
+
+    sim.E = 1e10;
+    sim.nu = 0.3;  
+    sim.rho = 400;     
+
+    sampleParticles(sim, 0.2);
+
+    sim.simulate();
+
+    TV plate_force = TV::Zero();
+    for (auto& obj: sim.plates){
+        plate_force = obj->force;
+    }
+
+    #ifdef THREEDIM
+        T exp_force = sim.rho * sim.Lx * sim.Ly * sim.Lz * sim.gravity[1];
+    #else
+        T exp_force = sim.rho * sim.Lx * sim.Ly * sim.gravity[1];
+    #endif
+    T com_force = plate_force(1);
+    T diff = std::abs(exp_force - com_force)/exp_force;
+
+    ASSERT_NEAR(diff, 0.0, 1e-3);
+
 }

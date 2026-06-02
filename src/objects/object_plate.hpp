@@ -10,7 +10,7 @@ public:
 
 #ifdef THREEDIM
 
-    ObjectPlate(T pos_object, PlateType plate_type, BC bc = BC::NoSlip, T friction = 0, T pos_lower = -1e15, T pos_upper = 1e15, T vx_object = 0.0, T vy_object = 0.0, T vz_object = 0.0, T vmin_factor = 1.0, T load_factor = 0.0, std::string name = "") :
+    ObjectPlate(T pos_object, PlateType plate_type, BC bc = BC::NoSlip, T friction = 0, T pos_lower = -1e15, T pos_upper = 1e15, T vx_object = 0.0, T vy_object = 0.0, T vz_object = 0.0, T vmin_factor = 1.0, T load_factor = 0.0, std::string name = "plate", bool force_calc = false) :
               pos_object(pos_object),
               plate_type(plate_type),
               bc(bc),
@@ -25,7 +25,8 @@ public:
               vz_object_original(vz_object),
               vmin_factor(vmin_factor),
               load_factor(load_factor),
-              name(name) {}
+              name(name),
+              force_calc(force_calc) {}
 
       bool inside(const TV& X_in) const {
           if (plate_type == PlateType::left){
@@ -80,7 +81,7 @@ public:
 
 #else // TWODIM
 
-    ObjectPlate(T pos_object, PlateType plate_type, BC bc = BC::NoSlip, T friction = 0, T pos_lower = -1e15, T pos_upper = 1e15, T vx_object = 0.0, T vy_object = 0.0, T vmin_factor = 1.0, T load_factor = 0.0, std::string name = "") :
+    ObjectPlate(T pos_object, PlateType plate_type, BC bc = BC::NoSlip, T friction = 0, T pos_lower = -1e15, T pos_upper = 1e15, T vx_object = 0.0, T vy_object = 0.0, T vmin_factor = 1.0, T load_factor = 0.0, std::string name = "plate", bool force_calc = false) :
               pos_object(pos_object),
               plate_type(plate_type),
               bc(bc),
@@ -93,7 +94,8 @@ public:
               vy_object_original(vy_object),
               vmin_factor(vmin_factor),
               load_factor(load_factor),
-              name(name) {}
+              name(name),
+              force_calc(force_calc) {}
 
     bool inside(const TV& X_in) const {
         if (plate_type == PlateType::left){
@@ -186,6 +188,10 @@ public:
   T load_factor;
 
   std::string name;
+
+  bool force_calc;
+
+  TV force = TV::Zero();
 
 };
 
