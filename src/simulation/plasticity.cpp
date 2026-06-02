@@ -483,8 +483,14 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 T fac_b = p_trial*(mu_2-mu_1) + f_mu_prefac*dt*fac_Q*std::sqrt(p_special) - (q_trial-q_yield);
                 T fac_c = -(q_trial-q_yield) * fac_Q * std::sqrt(p_special); // always negative 
 
-                // this is gamma_dot:
-                T delta_gamma = (-fac_b + std::sqrt(fac_b*fac_b - 4*fac_a*fac_c) ) / (2*fac_a); // always if because a>0 and c<0
+                T delta_gamma; // this is gamma_dot: always positive if because a>0 and c<0
+                T sqrtdet = std::sqrt(fac_b*fac_b - 4*fac_a*fac_c);
+                if (fac_b > 0){
+                    delta_gamma = 2*fac_c / (-fac_b - sqrtdet);
+                }
+                else {
+                    delta_gamma = (-fac_b + sqrtdet) / (2 * fac_a);
+                }
 
                 T mu_i = mu_1 + (mu_2 - mu_1) / (fac_Q * std::sqrt(p_special) / delta_gamma + 1.0);
                 particles.muI[p]       = mu_i;
@@ -564,7 +570,14 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
                     T fac_c = -(q_trial-q_stress) * fac_Q * std::sqrt(p_special); // always negative
 
-                    T gamma_dot_S = (-fac_b + std::sqrt(fac_b*fac_b - 4*fac_a*fac_c) ) / (2*fac_a); // always positive because a>0 and c<0
+                    T gamma_dot_S; // always positive because a>0 and c<0
+                    T sqrtdet = std::sqrt(fac_b*fac_b - 4*fac_a*fac_c);
+                    if (fac_b > 0){
+                        gamma_dot_S = 2*fac_c / (-fac_b - sqrtdet);
+                    }
+                    else {
+                        gamma_dot_S = (-fac_b + sqrtdet) / (2 * fac_a);
+                    }
 
                     q_stress = std::max(q_stress, q_trial - f_mu_prefac * dt * gamma_dot_S); // always smaller than q_trial
             

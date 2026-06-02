@@ -210,7 +210,7 @@ This is a non-exhaustive list of parameters and options (of the `Simulation` cla
 | `use_musl`        | false | Use MUSL instead of USL
 | `use_mibf`        | false | Use Material-Induced Boundary Friction (MIBF), only relevant for certain plasticity models
 | `pbc`             | false | Use periodic boundary conditions in $x$-direction bounded by `Lx`
-| `calculate_energy`| false | Calculate elastic and plastic energy on each particle
+| `calculate_energy`| false | Calculate elastic and plastic energy on each particle (experimental)
 | `Lx`, `Ly`, `Lz`  | 1.0    | The material sample space used in `sampleParticles(...)`. Not needed when sampling from VDB.
 | `grid_reference_point` | - | Optionally provide a point to be considered in the initial adaptive grid creation, otherwise it only considers the particle domain
 | `elastic_model`        | ElasticModel::Hencky       | Elastic model. Note that Hencky's model must be used when combined with a plastic model. 
