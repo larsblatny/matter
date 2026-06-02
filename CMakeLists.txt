@@ -10,6 +10,9 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
+option (USE_VDB "Use OpenVDB part of the code" ON)
+message(STATUS "Use of OpenVDB: ${USE_VDB}")
+
 enable_testing()
 
 # Custom target to clean CMake cache (like make clean for cache)
@@ -20,8 +23,6 @@ add_custom_target(clean-cache
 
 add_subdirectory(src)
 add_subdirectory(tests)
-
-option (USE_VDB "Use OpenVDB part of the code" ON)
 
 #### Download header files from external Github repos ####
 

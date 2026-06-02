@@ -105,6 +105,20 @@ inline T selfDoubleDot(TM& A){
     return out;
 }
 
+inline T doubleDot(TM& A, TM& B){
+
+    #ifdef THREEDIM
+    T out = A(0,0)*B(0,0) + A(0,1)*B(0,1) + A(0,2)*B(0,2)
+          + A(1,0)*B(1,0) + A(1,1)*B(1,1) + A(1,2)*B(1,2)
+          + A(2,0)*B(2,0) + A(2,1)*B(2,1) + A(2,2)*B(2,2);
+    #else
+    T out = A(0,0)*B(0,0) + A(0,1)*B(0,1)
+          + A(1,0)*B(1,0) + A(1,1)*B(1,1);
+    #endif
+
+    return out;
+}
+
 #if SPLINEDEG == 3
 
     inline T N(T u){
