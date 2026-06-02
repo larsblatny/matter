@@ -389,7 +389,7 @@ void Simulation::saveAvgData(){
     outFile3 << Javg  << "\n";
     outFile3.close();
 
-    std::ofstream outFile4(directory + sim_name + "/last_saved_frame.txt");
+    std::ofstream outFile4(directory + sim_name + "/last_written_avg.txt");
     outFile4 << std::to_string(frame) << "\n";
     outFile4.close();
 
@@ -461,10 +461,10 @@ void Simulation::saveForces(){
             std::ofstream outFile;
 
             if (current_time_step == 0) {
-                outFile.open(directory + sim_name + "/force_" + obj->name + ".txt", std::ios::trunc);
+                outFile.open(directory + sim_name + "/force_" + obj->name + ".csv", std::ios::trunc);
             }
             else {
-                outFile.open(directory + sim_name + "/force_" + obj->name + ".txt", std::ios::app);
+                outFile.open(directory + sim_name + "/force_" + obj->name + ".csv", std::ios::app);
             }
 
             #ifdef THREEDIM
@@ -489,10 +489,10 @@ void Simulation::saveForces(){
             std::ofstream outFile;
 
             if (current_time_step == 0) {
-                outFile.open(directory + sim_name + "/force_" + obj->name + ".txt", std::ios::trunc);
+                outFile.open(directory + sim_name + "/force_" + obj->name + ".csv", std::ios::trunc);
             }
             else {
-                outFile.open(directory + sim_name + "/force_" + obj->name + ".txt", std::ios::app);
+                outFile.open(directory + sim_name + "/force_" + obj->name + ".csv", std::ios::app);
             }
 
             #ifdef THREEDIM
