@@ -4,6 +4,7 @@
 
 #include "../src/tools.hpp"
 #include "../src/simulation/simulation.hpp"
+#include "../src/sampling/sampling_particles.hpp"
 
 #include "../src/objects/object_curve.hpp"
 #include "../src/objects/object_vdb.hpp"
@@ -77,7 +78,7 @@ TEST(BoundaryTest, VDB) {
 
     T v_sim = sim.particles.v[0](0);
     T v_true = std::sqrt(2*9.81);
-    T diff = std::abs(v_sim-v_true)/v_true;
+    T diff = std::abs(v_sim - v_true) / v_true;
     ASSERT_NEAR(diff, 0.0, 1e-3);
 }
 
@@ -131,7 +132,8 @@ TEST(ForceTest, NoSlipCubeVdb) {
     #endif
     
     T com_force = obj_force(1);
-    T diff = std::abs(exp_force - com_force)/exp_force;
+    T diff = std::abs(exp_force - com_force) / exp_force;
+    debug("diff: ", diff);
 
     ASSERT_NEAR(diff, 0.0, 1e-3);
 
