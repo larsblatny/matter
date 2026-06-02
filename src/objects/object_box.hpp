@@ -14,7 +14,7 @@ public:
 
     ~ObjectBox(){}
 
-    ObjectBox(BC bc_in = BC::NoSlip, T friction_in = 0.0, std::string name_in = "", TV L_in = TV::Ones(), TV c_in = TV::Zero(), TV v_in = TV::Zero()) : ObjectGeneral(bc_in, friction_in, name_in), L(L_in), c(c_in), c0(c_in), v(v_in) {}
+    ObjectBox(BC bc_in = BC::NoSlip, T friction_in = 0.0, std::string name_in = "box", bool force_calc_in = false, TV L_in = TV::Ones(), TV c_in = TV::Zero(), TV v_in = TV::Zero()) : ObjectGeneral(bc_in, friction_in, name_in, force_calc_in), L(L_in), c(c_in), c0(c_in), v(v_in) {}
 
     bool inside(const TV& X_in) const override {
 

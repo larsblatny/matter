@@ -10,7 +10,7 @@ public:
 
     ~ObjectBump(){}
 
-    ObjectBump(BC bc_in, T friction_in, std::string name_in = "") : ObjectGeneral(bc_in, friction_in, name_in) {}
+    ObjectBump(BC bc_in, T friction_in, std::string name_in = "bump", bool force_calc_in = false) : ObjectGeneral(bc_in, friction_in, name_in, force_calc_in) {}
 
     bool inside(const TV& X_in) const override {
 

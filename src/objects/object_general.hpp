@@ -11,8 +11,11 @@ public:
     BC bc;
     T friction;
     std::string name;
+    bool force_calc;
 
-    ObjectGeneral(BC bc, T friction, std::string name, TV v_object = TV::Zero()) : bc(bc), friction(friction), name(name) {}
+    TV force = TV::Zero();
+
+    ObjectGeneral(BC bc, T friction, std::string name, bool force_calc, TV v_object = TV::Zero()) : bc(bc), friction(friction), name(name), force_calc(force_calc) {}
 
     virtual ~ObjectGeneral(){}
 

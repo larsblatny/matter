@@ -389,7 +389,7 @@ void Simulation::saveAvgData(){
     outFile3 << Javg  << "\n";
     outFile3.close();
 
-    std::ofstream outFile4(directory + sim_name + "/last_saved_frame.txt");
+    std::ofstream outFile4(directory + sim_name + "/last_written_avg.txt");
     outFile4 << std::to_string(frame) << "\n";
     outFile4.close();
 
@@ -453,3 +453,61 @@ void Simulation::saveTiming(){
     timeFile.close();
 }
 
+void Simulation::saveForces(){
+
+    for (auto& obj : objects){
+
+        if (obj->force_calc == true){
+            std::ofstream outFile;
+
+            if (current_time_step == 0) {
+                outFile.open(directory + sim_name + "/force_" + obj->name + ".csv", std::ios::trunc);
+            }
+            else {
+                outFile.open(directory + sim_name + "/force_" + obj->name + ".csv", std::ios::app);
+            }
+
+            #ifdef THREEDIM
+                outFile << time << ","
+                        << std::fixed << std::setprecision(10) << obj->force(0) << ","
+                        << std::fixed << std::setprecision(10) << obj->force(1) << ","
+                        << std::fixed << std::setprecision(10) << obj->force(2) << "\n";
+
+            #else
+                outFile << time << ","
+                        << std::fixed << std::setprecision(10) << obj->force(0) << ","
+                        << std::fixed << std::setprecision(10) << obj->force(1) << "\n";
+            #endif
+            outFile.close();
+        }
+
+    }
+
+    for (auto& obj : plates){
+
+        if (obj->force_calc == true){
+            std::ofstream outFile;
+
+            if (current_time_step == 0) {
+                outFile.open(directory + sim_name + "/force_" + obj->name + ".csv", std::ios::trunc);
+            }
+            else {
+                outFile.open(directory + sim_name + "/force_" + obj->name + ".csv", std::ios::app);
+            }
+
+            #ifdef THREEDIM
+                outFile << time << ","
+                        << std::fixed << std::setprecision(10) << obj->force(0) << ","
+                        << std::fixed << std::setprecision(10) << obj->force(1) << ","
+                        << std::fixed << std::setprecision(10) << obj->force(2) << "\n";
+
+            #else
+                outFile << time << ","
+                        << std::fixed << std::setprecision(10) << obj->force(0) << ","
+                        << std::fixed << std::setprecision(10) << obj->force(1) << "\n";
+            #endif
+            outFile.close();
+        }
+    }
+
+}

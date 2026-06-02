@@ -146,6 +146,7 @@ void Simulation::simulate(){
     debug("Particle volume:     ", particle_volume);
     debug("Particle mass:       ", particle_mass);
 
+    current_time_step = 0;
     time = 0;
     frame = 0;
     final_time = end_frame * frame_dt;
@@ -153,6 +154,7 @@ void Simulation::simulate(){
     if (save_sim){
         saveInfo();
         saveParticleData();
+        saveForces();
     }
 
     // Total runtime of simulation
@@ -175,6 +177,7 @@ void Simulation::simulate(){
             std::cout << "End of frame " << frame << std::endl;
             if (save_sim){
                 saveParticleData();
+                saveForces();
                 if (save_grid)
                     saveGridData();
                 // saveAvgData();
@@ -185,6 +188,7 @@ void Simulation::simulate(){
             std::cout << "The simulation ended at time = " << time << std::endl;
             if (save_sim){
                 saveParticleData();
+                saveForces();
                 if (save_grid)
                     saveGridData();
                 // saveAvgData();
@@ -211,6 +215,10 @@ void Simulation::simulate(){
 
 
 void Simulation::advanceStep(){
+
+    for (auto& obj: objects) obj->force.setZero();
+    for (auto& obj: plates) obj->force.setZero();
+
     updateDt();
 
     if (pbc){
@@ -264,6 +272,8 @@ void Simulation::advanceStep(){
     positionUpdate();
 
     moveObjects();
+
+    // saveForces(); this is normally done per frame
 
 } // end advanceStep
 

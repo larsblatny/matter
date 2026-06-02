@@ -4,6 +4,7 @@
 
 #include "../src/tools.hpp"
 #include "../src/simulation/simulation.hpp"
+#include "../src/sampling/sampling_particles.hpp"
 
 #include "../src/objects/object_curve.hpp"
 #include "../src/objects/object_vdb.hpp"
@@ -77,6 +78,63 @@ TEST(BoundaryTest, VDB) {
 
     T v_sim = sim.particles.v[0](0);
     T v_true = std::sqrt(2*9.81);
-    T diff = std::abs(v_sim-v_true)/v_true;
+    T diff = std::abs(v_sim - v_true) / v_true;
     ASSERT_NEAR(diff, 0.0, 1e-3);
+}
+
+TEST(ForceTest, NoSlipCubeVdb) {
+
+    openvdb::initialize();
+
+    Simulation sim;
+    sim.initialize(false);
+
+    sim.end_frame = 10;  
+    sim.fps = 10;     
+    sim.n_threads = 8;  
+    sim.cfl = 0.5;
+    sim.flip_ratio = 0; 
+
+    sim.gravity[1] = -9.81; 
+
+    sim.Lx = 1;
+    sim.Ly = 1;
+    #ifdef THREEDIM
+        sim.Lz = 1; 
+    #endif
+
+    T friction = 0;
+    T y_ground = 0;
+    std::string name = "box_vdb";
+
+    sim.objects.push_back(std::make_unique<ObjectVdb>(std::string(INCLUDE_DIR) + "/box.vdb", BC::NoSlip, friction, name, true));       
+
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.plastic_model = PlasticModel::NoPlasticity; 
+
+    sim.E = 1e10;
+    sim.nu = 0.3;  
+    sim.rho = 400;     
+
+    sampleParticles(sim, 0.1);
+
+    sim.simulate();
+
+    TV obj_force = TV::Zero();
+    for (auto& obj: sim.objects){
+        obj_force = obj->force;
+    }
+
+    #ifdef THREEDIM
+        T exp_force = sim.rho * sim.Lx * sim.Ly * sim.Lz * sim.gravity[1];
+    #else
+        T exp_force = sim.rho * sim.Lx * sim.Ly * sim.gravity[1];
+    #endif
+    
+    T com_force = obj_force(1);
+    T diff = std::abs(exp_force - com_force) / exp_force;
+    debug("diff: ", diff);
+
+    ASSERT_NEAR(diff, 0.0, 1e-3);
+
 }

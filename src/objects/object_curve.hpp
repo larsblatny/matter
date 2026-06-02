@@ -10,7 +10,7 @@ public:
 
     ~ObjectCurve(){}
 
-    ObjectCurve(BC bc_in = BC::NoSlip, T friction_in = 0.0, std::string name_in = "") : ObjectGeneral(bc_in, friction_in, name_in) {}
+    ObjectCurve(BC bc_in = BC::NoSlip, T friction_in = 0.0, std::string name_in = "curve", bool force_calc_in = false) : ObjectGeneral(bc_in, friction_in, name_in, force_calc_in) {}
 
     bool inside(const TV& X_in) const override {
 

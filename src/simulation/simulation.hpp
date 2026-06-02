@@ -122,6 +122,7 @@ public:
   void saveAvgData();
   void computeAvgData(TM& volavg_cauchy, TM& volavg_kirchh, T& Javg);
   void saveParticleData(std::string extra = "");
+  void saveForces();
   void saveGridData(std::string extra = "");
   void createDirectory();
   void advanceStep();
@@ -141,7 +142,7 @@ public:
   void PBCDelParticles();
   void plasticity(unsigned int p, unsigned int & plastic_count, TM & Fe_trial);
   void moveObjects();
-  void boundaryCollision(int index, TV Xi, TV& vi);
+  void boundaryCollision(T mi, int index, TV Xi, TV& vi);
   void overwriteGridVelocity(TV Xi, TV& vi);
   void checkMomentumConservation();
   void checkMassConservation();
