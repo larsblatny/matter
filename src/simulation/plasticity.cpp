@@ -40,7 +40,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         if (hencky_deviatoric_norm > 0)
             hencky_deviatoric /= hencky_deviatoric_norm; // normalize the deviatoric vector so it gives a unit vector specifying the deviatoric direction
 
-        T eps_pl_vol_inst = 0; // These are declared here for the purpose of #ENERGY option
+        T eps_pl_vol_inst = 0;
         T eps_pl_dev_inst = 0;
 
         if (plastic_model == PlasticModel::VM){
@@ -427,9 +427,6 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 particles.eps_pl_dev[p] += eps_pl_dev_inst;
                 particles.delta_gamma[p] = delta_gamma / dt;
 
-              #ifdef ENERGY
-                
-              #endif 
             } // end plastic projection
         } // end DPVisc
 
@@ -460,10 +457,6 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 particles.eps_pl_dev[p]          += eps_pl_dev_inst;
                 particles.eps_pl_vol[p]          += eps_pl_vol_inst;
                 particles.eps_pl_vol_pradhana[p] += eps_pl_vol_inst; // can be negative!
-
-              #ifdef ENERGY
-                
-              #endif 
             }
             else{ // if right of shifted tip (incl elastic states)
                 particles.eps_pl_vol_pradhana[p] = 0; // reset pradhana volume accumulation
