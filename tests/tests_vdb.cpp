@@ -135,6 +135,6 @@ TEST(ForceTest, NoSlipCubeVdb) {
     T diff = std::abs(exp_force - com_force) / exp_force;
     debug("diff: ", diff);
 
-    ASSERT_NEAR(diff, 0.0, 1e-3);
+    ASSERT_NEAR(diff, 0.0, 1e-7);
 
 }

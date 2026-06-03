@@ -4,9 +4,7 @@
 #include "simulation/simulation.hpp"
 #include "sampling/sampling_particles.hpp"
 
-#include "objects/object_bump.hpp"
-#include "objects/object_gate.hpp"
-#include "objects/object_ramp.hpp"
+#include "objects/object_box.hpp"
 #include "objects/object_plate.hpp"
 
 // Comment if not compiling with OpenVDB:
@@ -28,6 +26,8 @@ int main(){
     sim.cfl = 0.5;          // CFL constant, typically around 0.5
     sim.flip_ratio = -0.95; // (A)PIC-(A)FLIP ratio in [-1,1].
 
+    sim.calculate_energy = true; // saves energy on each particle
+
     // INITILIZE ELASTICITY
     sim.elastic_model = ElasticModel::Hencky;
     sim.E = 1e6;     // Young's modulus (Pa)
@@ -46,7 +46,7 @@ int main(){
     sim.Ly = 1;
     T k_rad = 0.01;
     #ifdef THREEDIM
-        sim.Lz = 5;
+        sim.Lz = 0.2;
     #endif
     sampleParticles(sim, k_rad);
 
@@ -54,6 +54,9 @@ int main(){
     for(int p = 0; p < sim.Np; p++){
         sim.particles.x[p](0) -= 0.5*sim.Lx;
         sim.particles.x[p](1) += 0.5*sim.dx;
+        #ifdef THREEDIM
+            sim.particles.x[p](2) -= 0.5*sim.Lz;
+        #endif
     }
     sim.grid_reference_point = TV::Zero();
 
@@ -62,11 +65,20 @@ int main(){
 
     ////// OBJECTS AND TERRAINS
     sim.plates.push_back(std::make_unique<ObjectPlate>(0, PlateType::bottom, BC::NoSlip)); 
+    sim.plates.push_back(std::make_unique<ObjectPlate>(0, PlateType::left, BC::SlipFree)); 
 
-    /////// Here are some examples how to use the objects derived from ObjectGeneral:
-    // T friction = 0.2; 
-    // sim.objects.push_back(std::make_unique<ObjectBump>(BC::SlipFree, friction));
-    // sim.objects.push_back(std::make_unique<ObjectGate>(BC::SlipFree, friction));
+    /////// Here is an example how to use an objects derived from ObjectGeneral:
+    T box_friction = 0.2; // Friction coefficient for object
+    bool box_force = true; // Calculate force on object (can slow down simulation)
+    #ifdef THREEDIM
+        TV box_L(0.2, 0.2, 0.2);
+        TV box_c(1, 0.1, 0);
+    #else
+        TV box_L(0.2, 0.2);
+        TV box_c(1, 0.1);
+    #endif
+    TV box_v = TV::Zero(); // Imposed velocity of object
+    sim.objects.push_back(std::make_unique<ObjectBox>(BC::SlipFree, box_friction, "object_box", box_force, box_L, box_c, box_v));
 
     /////// Here is an example how to use ObjectVdb (uncomment includes and openvdb::initialize() above):
     // sim.objects.push_back(std::make_unique<ObjectVdb>("../levelsets/vdb_file_name.vdb", BC::NoSlip, friction));

@@ -173,6 +173,8 @@ Rigid objects and terrains (boundaries) are either
 * formulated analytically as level sets (signed distance functions)   
 * or imported as `.vdb` level sets files using [OpenVDB](https://www.openvdb.org/)   
 
+The objects already available can be found in the `objects` directory. The forces acting on these objects can be measured by setting their parameter `force_calc = true`, see the example `collapse.cpp`. Be aware that if the force measurement is turned on for an object which is contantly in collision with a large part of the material, this may slightly slow down the simulation.
+
 ##### Analytical objects
 Analytical objects can be specified as a derived class from the general `ObjectGeneral` class. An example of this is `ObjectBump` which provides the terrain of a smooth bump used in the flow experiments in [Viroulet et al. (2017)](https://doi.org/10.1017/jfm.2017.41). For the very common case of an axis-aligned plate, an `ObjectPlate` class has been made separate from `ObjectGeneral` class for efficiency and convenience. In `ObjectPlate`, you can also assign a speed to the plate, as well as controls on the time-evolution of the speed. Any plate must either a `PlateType::top`, `PlateType::bottom`, `PlateType::front`, `PlateType::back`, `PlateType::left` or `PlateType::right`. 
 
@@ -185,11 +187,15 @@ Multiple objects in a simulation are possible. Note that all `ObjectGeneral` ins
 
 ### Saving simulation data
 
-The directory to save the output data is specified by the user in the setup file `mpm.cpp`.
+The directory to save the output data is specified by the user in the setup file `mpm.cpp`.   
+
 Particle data is saved as **binary PLY-files** (using [tinyply](https://github.com/ddiakopoulos/tinyply)) with the format (`particles_fX.ply`) where X represents the frame number (from 0 to `end_frame` as specified by the user). 
-Optionally, if `save_grid = true`, the grid data is saved as `grid_fX.ply`. 
+Optionally, if `save_grid = true`, the grid data is saved as `grid_fX.ply`.    
+
 We recommend [SideFX's Houdini](https://www.sidefx.com) for visualization the particle data. In the file `visualize.hipnc` in the `postprocess` directory, we show how to make a simple visualization of the data. Some simple post-processing can also be done directly in Houdini. 
-PLY files can also be easily read by Python. This is shown in the file `load_ply.py` which can be found in the `postprocess` directory.
+PLY files can also be easily read by Python. This is shown in the file `load_ply.py` which can be found in the `postprocess` directory.   
+
+If forces are measured on objects, this will be saved as `force_<name-of-object>.csv` where each line contains (time, Fx, Fy(, Fz)) for each frame.
 
 
 ### Key parameters and options

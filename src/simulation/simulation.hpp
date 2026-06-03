@@ -43,6 +43,7 @@ public:
   bool change_particle_positions = false;
   bool gravity_special = false;
   bool save_grid = false;
+  bool save_avg = false;
   bool use_mibf = false;
   bool use_musl = false;
   bool calculate_energy = false;
@@ -50,7 +51,7 @@ public:
   TV grid_reference_point = 2e10 * TV::Ones();
   TV gravity = TV::Zero();
 
-  T min_dt = 1e-14; // minimum dt, also used to check  end of frame, use with caution
+  T min_dt = 1e-14; // minimum dt, also used to check end of frame, use with caution
   T fps = 1; // frames per second
   T cfl = 0.5; // classical CFL coefficient
   T cfl_elastic = 0.5; // CFL-like coffefficient for elastic wave speed

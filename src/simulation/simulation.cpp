@@ -180,19 +180,12 @@ void Simulation::simulate(){
                 saveForces();
                 if (save_grid)
                     saveGridData();
-                // saveAvgData();
+                if (save_avg)
+                    saveAvgData();
             }
-
         }
         if (std::abs(final_time-time) < min_dt*1.1 || final_time < time){
             std::cout << "The simulation ended at time = " << time << std::endl;
-            if (save_sim){
-                saveParticleData();
-                saveForces();
-                if (save_grid)
-                    saveGridData();
-                // saveAvgData();
-            }
             break;
         }
     }
@@ -256,7 +249,6 @@ void Simulation::advanceStep(){
         PBCDelParticles();
     }
 
-
     timer t_g2p; t_g2p.start();
     G2P();
     t_g2p.stop(); runtime_g2p += t_g2p.get_timing();
@@ -272,8 +264,6 @@ void Simulation::advanceStep(){
     positionUpdate();
 
     moveObjects();
-
-    // saveForces(); this is normally done per frame
 
 } // end advanceStep
 
