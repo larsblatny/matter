@@ -48,6 +48,7 @@ public:
   bool save_avg = false;
   bool use_mibf = false;
   bool use_musl = false;
+  bool use_sparse = false;
   bool calculate_energy = false;
 
   TV grid_reference_point = 2e10 * TV::Ones();
@@ -157,6 +158,10 @@ public:
   T calculateBulkModulus();
   TM NeoHookeanPiola(TM & Fe);
   TM HenckyPiola(TM & Fe);
+
+  void get_particles_minmax();
+  void mark_active_blocks_scan();
+  void reset_sparse_grid_scan();
 
 private:
 

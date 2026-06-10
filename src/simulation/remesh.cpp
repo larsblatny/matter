@@ -11,6 +11,16 @@ void Simulation::resizeGrid(){
         grid.friction.resize(grid_nodes); std::fill( grid.friction.begin(), grid.friction.end(), 0.0 );
 }
 
+void Simulation::reset_sparse_grid_scan() {
+    grid.v.resize(scan_sparse_grid.num_active_nodes()); std::fill( grid.v.begin(),    grid.v.end(),    TV::Zero() );
+    grid.flip.resize(scan_sparse_grid.num_active_nodes()); std::fill( grid.flip.begin(), grid.flip.end(), TV::Zero() );
+    grid.force.resize(scan_sparse_grid.num_active_nodes()); std::fill( grid.force.begin(), grid.force.end(), TV::Zero() );
+    grid.mass.resize(scan_sparse_grid.num_active_nodes()); std::fill( grid.mass.begin(), grid.mass.end(), 0.0        );
+    if (use_mibf) {
+        grid.friction.resize(scan_sparse_grid.num_active_nodes()); std::fill( grid.friction.begin(), grid.friction.end(), 0.0 );
+    }
+}
+
 // A fixed grid - must hard-coded for every simulation
 void Simulation::remeshFixed(unsigned int extra_nodes){
 
