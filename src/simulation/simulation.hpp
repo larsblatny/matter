@@ -20,6 +20,8 @@
 #include "../objects/object_general.hpp"
 #include "../objects/object_plate.hpp"
 
+#include "../block_scan_grid.hpp"
+
 class Simulation{
 public:
   Simulation();
@@ -114,6 +116,9 @@ public:
   // Objects
   std::vector<std::unique_ptr<ObjectPlate>> plates;
   std::vector<std::unique_ptr<ObjectGeneral>> objects;
+
+  // Scan-based sparse grid
+  BlockScanGrid scan_sparse_grid;
 
   // Functions
   void initialize(bool save = true, std::string dir = "output/", std::string name = "dummy");

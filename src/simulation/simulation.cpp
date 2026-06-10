@@ -157,6 +157,13 @@ void Simulation::simulate(){
         saveForces();
     }
 
+    // Init scan-based sparse grid
+    int B = 4; // Block size
+    BlockScanGrid::I3 bmin{0, 0, 0}; // Needs to be reset before calling scan_sparse_grid.init()
+    BlockScanGrid::I3 bmax{8, 8, 8}; // Needs to be reset before calling scan_sparse_grid.init()
+    scan_sparse_grid.init(B, bmin, bmax, int(n_threads));
+
+
     // Total runtime of simulation
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
