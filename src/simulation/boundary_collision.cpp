@@ -417,9 +417,7 @@ void Simulation::boundaryCollision(T mi, int index, TV Xi, TV& vi){
 
 
 
-void Simulation::boundaryCollision_sparse(int gid, TV Xi, TV& vi){
-
-#ifdef THREEDIM
+void Simulation::boundaryCollision_sparse(T mi, int gid, TV Xi, TV& vi){
 
     // Make a copy
     TV vi_orig = vi;
@@ -427,11 +425,11 @@ void Simulation::boundaryCollision_sparse(int gid, TV Xi, TV& vi){
     // New positions
     Xi += dt * vi; // recall Xi was passed by value
 
-    // collision with objects
     for(auto& obj : objects) {
         bool colliding = obj->inside(Xi);
         if (colliding) {
-            TV v_rel = vi_orig;
+            TV v_object = obj->v_object(time, Xi);
+            TV v_rel = vi_orig - v_object;
 
             if (obj->bc == BC::NoSlip) {
                 v_rel.setZero();
@@ -487,7 +485,14 @@ void Simulation::boundaryCollision_sparse(int gid, TV Xi, TV& vi){
                 return;
             }
 
-            vi = v_rel;
+            vi = v_rel + v_object;
+
+            if (obj->force_calc == true){
+                #pragma omp critical 
+                {
+                    obj->force += (mi / dt) * (vi_orig - vi);
+                }
+            }
 
             // update velocity copy before next iteration
             vi_orig = vi; // Comment this line to enforce ordering of objects (i.e., use only last object in list)
@@ -496,7 +501,9 @@ void Simulation::boundaryCollision_sparse(int gid, TV Xi, TV& vi){
 
     } // end iterator over general objects
 
-    // collision with plates
+
+#ifdef THREEDIM
+
     for (auto& obj : plates) {
         bool colliding = obj->inside(Xi);
         if (colliding) {
@@ -669,12 +676,21 @@ void Simulation::boundaryCollision_sparse(int gid, TV Xi, TV& vi){
             vi(1) = vy_rel + obj->vy_object;
             vi(2) = vz_rel + obj->vz_object;
 
+            if (obj->force_calc == true){
+                #pragma omp critical 
+                {
+                    obj->force += (mi / dt) * (vi_orig - vi);
+                }
+            }
+
             // update velocity copy before next iteration
             vi_orig = vi; // Comment this line to enforce ordering of objects (i.e., use only last object in list)
 
         } // end if colliding
 
     } // end iterator over 3D plate objects
-#endif
+
+
+#endif 
 
 } // end boundaryCollision_sparse

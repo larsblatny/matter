@@ -93,7 +93,7 @@ void Simulation::explicitEulerUpdate_sparse_scan() {
                 grid.friction[l] /= mi;
             }
 
-            boundaryCollision_sparse(l, Xi, new_vi);
+            boundaryCollision_sparse(mi, l, Xi, new_vi);
 
             grid.v[l] = new_vi;
             grid.flip[l] = new_vi - old_vi;
