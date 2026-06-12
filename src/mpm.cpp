@@ -29,7 +29,7 @@ int main(){
     sim.flip_ratio = -0.95; // (A)PIC-(A)FLIP ratio in [-1,1].
     sim.reduce_verbose = true;
 
-    sim.use_sparse = false;
+    sim.use_sparse = true;
 
     // INITILIZE ELASTICITY
     sim.elastic_model = ElasticModel::Hencky;
