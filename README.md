@@ -38,6 +38,8 @@ With _Matter_, you can simulate granular flow on various simple and complex terr
 
 * Adaptive background **grid extension/reduction** to particle domain
 
+* Spatially **sparse** background grid for efficient simulation of 3D, large-scale problems
+
 
 * **Finite strain** elastoplastic framework for constitutive models
   
@@ -286,8 +288,6 @@ In the MCC-based models, one must also choose a corresponding hardening law:
 
 ## Limitations
 
-* Optimized for dense (not sparse) topologies. On sparse topologies, the simulations can be rather slow. This follows from the chosen grid data format, which may be replaced in the future. However, the current choice keeps the code simple and organized.
-
 * Supports only single-materials, however, one can easily extend this to multi-material problems. E.g., one can create particle quantities for the relevant material parameters (see `data_structures.hpp`) which can then be used in the material models (see, e.g., `plasticity.cpp`)
 
 ## Troubleshooting
@@ -310,3 +310,6 @@ If you use the $\mu(I)$-rheology models, please also cite this article:
 
 * Blatny, L., Gray, J.M.N.T., & Gaume, J. (2024). A critical state μ(I)-rheology model for cohesive granular flows. _Journal of Fluid Mechanics_, 997, A67. [DOI: 10.1017/jfm.2024.643](https://doi.org/10.1017/jfm.2024.643)    
 
+If you use the sparse background grid feature (by setting `use_sparse=true`), please cite this article:
+
+* Zhao, Y., Blatny, L., Feng, X., Juel, M. M., Jiang, C., & Gaume, J. (2026). Unified sparse framework for large-scale material point method simulations. _arXiv preprint_ arXiv:2605.28525. [DOI: 10.48550/arXiv.2605.28525](https://doi.org/10.48550/arXiv.2605.28525)
