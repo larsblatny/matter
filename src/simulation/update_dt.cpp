@@ -11,9 +11,9 @@ void Simulation::updateDt(){
                                              } );
     T max_speed = (*max_velocity_it).norm();
 
-    if (max_speed >= wave_speed){
-        debug("               FYI the particle speed ", max_speed, " is larger than elastic wave speed ", wave_speed);
-    }
+    // if (max_speed >= wave_speed){
+    //     debug("               FYI the particle speed ", max_speed, " is larger than elastic wave speed ", wave_speed);
+    // }
 
 #ifdef WARNINGS
     debug("               dt_max = ", dt_max);
@@ -62,6 +62,9 @@ void Simulation::updateDt(){
 
     } // end gravity_special
 
+
+    // HARD CODE FOR MOUNTAIN
+    dt = T(0.0035);
 
 
 } // end updateDt

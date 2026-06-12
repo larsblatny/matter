@@ -139,6 +139,11 @@ void Simulation::simulate(){
         }
     }
 
+
+    if (use_sparse) {
+        std::cout << "Using sparse grid." << std::endl;
+    }
+
     debug("Number of particles: ", Np);
     debug("Grid spacing dx:     ", dx);
     debug("Elastic wave speed:  ", wave_speed);
