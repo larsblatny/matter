@@ -162,6 +162,10 @@ public:
   void get_particles_minmax();
   void mark_active_blocks_scan();
   void reset_sparse_grid_scan();
+  void P2G_sparse_scan();
+  void explicitEulerUpdate_sparse_scan();
+  void boundaryCollision_sparse(int gid, TV Xi, TV& vi);
+  void G2P_sparse_scan();
 
 private:
 

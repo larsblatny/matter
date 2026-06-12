@@ -135,3 +135,82 @@ void Simulation::P2G(){
     }
 
 } // end P2G
+
+
+void Simulation::P2G_sparse_scan() {
+    #pragma omp parallel num_threads(n_threads)
+    {
+        // Thread local grid quantities
+        std::vector<TV> grid_v_local(scan_sparse_grid.num_active_nodes(), TV::Zero() );
+        std::vector<T> grid_mass_local(scan_sparse_grid.num_active_nodes(), T(0));
+        std::vector<T> grid_friction_local(scan_sparse_grid.num_active_nodes(), T(0));
+        std::vector<TV> grid_force_local(scan_sparse_grid.num_active_nodes(), TV::Zero() );
+
+        // Parallel particles loop
+        #pragma omp for nowait
+        for(int p = 0; p < Np; p++){
+            TV xp = particles.x[p];
+            int i_base = std::floor(xp(0)*one_over_dx - 0.5); 
+            int j_base = std::floor(xp(1)*one_over_dx - 0.5); 
+            int k_base = std::floor(xp(2)*one_over_dx - 0.5);
+
+            // Kirchhoff stress
+            TM tau = particles.tau[p];
+
+            // Grid loop for each particle
+            for(int ix = i_base+0; ix<i_base+3; ix++){
+                T xi = ix * dx;
+                T wi = N((xp(0)-xi)*one_over_dx);
+                T wi_grad = dNdu((xp(0) - xi) * one_over_dx)  * one_over_dx;
+                for (int iy=j_base+0; iy<j_base+3; iy++) {
+                    T yj = iy * dx;
+                    T wj = N((xp(1) - yj)*one_over_dx);
+                    T wj_grad = dNdu((xp(1) - yj) * one_over_dx)  * one_over_dx;
+                    for (int iz=k_base+0; iz<k_base+3; iz++) {
+                        T zk = iz * dx;
+                        T wk = N((xp(2) - zk)*one_over_dx);
+                        T wk_grad = dNdu((xp(2) - zk) * one_over_dx)  * one_over_dx;
+
+                        // weight and gradient
+                        T weight = wi * wj * wk; 
+                        TV weight_grad; 
+                        weight_grad << wi_grad*wj*wk,
+                                       wi*wj_grad*wk,
+                                       wi*wj*wk_grad;
+
+                        // node (i, j, k) -> node flattened id
+                        int gid = scan_sparse_grid.ijk_to_gid(ix, iy, iz);
+                        assert(gid>=0);
+
+                        // P2G
+                        grid_mass_local[gid]  += weight * particle_mass;
+                        grid_v_local[gid]     += particles.v[p] * weight * particle_mass;
+                        grid_force_local[gid] += tau * weight_grad;
+                        if (flip_ratio < 0) { // APIC
+                            TV posdiffvec = TV::Zero();
+                            posdiffvec(0) = xi-xp(0);
+                            posdiffvec(1) = yj-xp(1);
+                            posdiffvec(2) = zk-xp(2);
+                            grid_v_local[gid] += particles.Bmat[p] * posdiffvec * apicDinverse * weight * particle_mass;
+                        }
+                        if (use_mibf) {
+                            grid_friction_local[gid] += particles.muI[p] * weight * particle_mass;
+                        }
+                    } // end z
+                } // end y
+            } // end x
+        } // end p
+
+        // Local to global
+        #pragma omp critical
+        {
+            for (int l = 0; l<scan_sparse_grid.num_active_nodes(); l++){
+                grid.mass[l]          += grid_mass_local[l];
+                grid.v[l]             += grid_v_local[l];
+                grid.force[l]         += grid_force_local[l];
+                if (use_mibf)
+                    grid.friction[l]  += grid_friction_local[l];
+            } // end for l
+        } // end omp critical
+    } // end opm parallel
+}

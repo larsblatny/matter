@@ -185,7 +185,7 @@ void Simulation::simulate(){
             if (save_sim){
                 saveParticleData();
                 saveForces();
-                if (save_grid)
+                if (save_grid && !use_sparse) // TODO: save sparse grid data has not been implemented
                     saveGridData();
                 if (save_avg)
                     saveAvgData();
@@ -349,14 +349,22 @@ void Simulation::advanceStep(){
     }
 
     timer t_p2g; t_p2g.start();
-    P2G();
+    if (!use_sparse) {
+        P2G();
+    } else {
+        P2G_sparse_scan();
+    }
     t_p2g.stop(); runtime_p2g += t_p2g.get_timing();
 
     // checkMassConservation();
     // checkMomentumConservation();
 
     timer t_euler; t_euler.start();
-    explicitEulerUpdate();
+    if (!use_sparse) {
+        explicitEulerUpdate();
+    } else {
+        explicitEulerUpdate_sparse_scan();
+    }
     t_euler.stop(); runtime_euler += t_euler.get_timing();
 
     // addExternalParticleGravity();
@@ -366,9 +374,14 @@ void Simulation::advanceStep(){
     }
 
     timer t_g2p; t_g2p.start();
-    G2P();
+    if (!use_sparse) {
+        G2P();
+    } else {
+        G2P_sparse_scan();
+    }
     t_g2p.stop(); runtime_g2p += t_g2p.get_timing();
 
+    // TODO: MUSL currently not supports sparse computing
     if (use_musl){
         MUSL();
 
@@ -377,7 +390,9 @@ void Simulation::advanceStep(){
         t_defgrad.stop(); runtime_defgrad += t_defgrad.get_timing();
     }
 
-    positionUpdate();
+    if (!use_sparse) {
+        positionUpdate();
+    }
 
     moveObjects();
 

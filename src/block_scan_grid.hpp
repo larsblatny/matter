@@ -94,6 +94,46 @@ public:
         }
     }
 
+    // Grid node (i, j, k) -> flattened node id
+    int ijk_to_gid(int ix, int iy, int iz) const {
+        int bx = floor_div(ix, B);
+        int by = floor_div(iy, B);
+        int bz = floor_div(iz, B);
+
+        // local
+        int lx = ix - bx * B;
+        int ly = iy - by * B;
+        int lz = iz - bz * B;
+
+        const int lid = lx + B * (ly + B * lz);
+
+        const int bidx = block_flattened_index(bx, by, bz);
+        if (bidx < 0) {
+            return -1;
+        }
+
+        const int bid = block_id[bidx];
+        if (bid < 0) {
+            return -1;
+        }
+
+        return bid * nodes_per_block + lid;
+    }
+
+    // Flattened node id -> node (i, j, k)
+    I3 gid_to_ijk(int gid) const {
+        const int bid = gid / nodes_per_block;
+        const int lid = gid - bid * nodes_per_block;
+
+        const int lx = lid % B;
+        const int t = lid / B;
+        const int ly = t % B;
+        const int lz = t / B;
+
+        const I3 b = block_xyz_by_id[bid];
+        return I3{b.x*B+lx, b.y*B+ly, b.z*B+lz};
+    }
+
     // Floor division supporting negative integers
     static int floor_div(int a, int b) {
         // for possible negative a
