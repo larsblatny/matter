@@ -183,18 +183,18 @@ void Simulation::P2G_sparse_scan() {
                         assert(gid>=0);
 
                         // P2G
-                        grid_mass_local[gid]  += weight * particle_mass;
-                        grid_v_local[gid]     += particles.v[p] * weight * particle_mass;
+                        grid_mass_local[gid]  += weight; //weight * particle_mass;
+                        grid_v_local[gid]     += particles.v[p] * weight; //particles.v[p] * weight * particle_mass;
                         grid_force_local[gid] += tau * weight_grad;
                         if (flip_ratio < 0) { // APIC
                             TV posdiffvec = TV::Zero();
                             posdiffvec(0) = xi-xp(0);
                             posdiffvec(1) = yj-xp(1);
                             posdiffvec(2) = zk-xp(2);
-                            grid_v_local[gid] += particles.Bmat[p] * posdiffvec * apicDinverse * weight * particle_mass;
+                            grid_v_local[gid] += particles.Bmat[p] * posdiffvec * apicDinverse * weight; //particles.Bmat[p] * posdiffvec * apicDinverse * weight * particle_mass;
                         }
                         if (use_mibf) {
-                            grid_friction_local[gid] += particles.muI[p] * weight * particle_mass;
+                            grid_friction_local[gid] += particles.muI[p] * weight; //particles.muI[p] * weight * particle_mass;
                         }
                     } // end z
                 } // end y

@@ -164,7 +164,6 @@ public:
   void reset_sparse_grid_scan();
   void P2G_sparse_scan();
   void explicitEulerUpdate_sparse_scan();
-  void boundaryCollision_sparse(T mi, int gid, TV Xi, TV& vi);
   void G2P_sparse_scan();
 
 private:

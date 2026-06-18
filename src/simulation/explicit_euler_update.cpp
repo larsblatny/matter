@@ -75,8 +75,16 @@ void Simulation::explicitEulerUpdate_sparse_scan() {
     #pragma omp parallel for num_threads(n_threads)
     for (int l=0; l<scan_sparse_grid.num_active_nodes(); ++l) { // loop on active nodes only
         T mi = grid.mass[l];
-        if (mi > 0) {
+        if (mi*particle_mass > 0) {
             grid.v[l] /= mi; // momentum to velocity
+            if (use_mibf) {
+                grid.friction[l] /= mi;
+            }
+
+            // Scale grid mass with particle mass
+            grid.mass[l] *= particle_mass;
+            mi = grid.mass[l];
+
             TV velocity_increment = -dt * particle_volume * grid.force[l] / mi + dt * gravity;
 
             TV old_vi = grid.v[l];
@@ -89,11 +97,7 @@ void Simulation::explicitEulerUpdate_sparse_scan() {
             int kz = ijk.z;
             TV Xi(ix*dx, jy*dx, kz*dx);
 
-            if (use_mibf) {
-                grid.friction[l] /= mi;
-            }
-
-            boundaryCollision_sparse(mi, l, Xi, new_vi);
+            boundaryCollision(mi, l, Xi, new_vi);
 
             grid.v[l] = new_vi;
             grid.flip[l] = new_vi - old_vi;
