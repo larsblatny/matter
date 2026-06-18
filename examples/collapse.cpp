@@ -28,6 +28,8 @@ int main(){
 
     sim.calculate_energy = true; // saves energy on each particle
 
+    sim.use_sparse = false; // recommended to use true for 3D problems
+
     // INITILIZE ELASTICITY
     sim.elastic_model = ElasticModel::Hencky;
     sim.E = 1e6;     // Young's modulus (Pa)
@@ -58,7 +60,6 @@ int main(){
             sim.particles.x[p](2) -= 0.5*sim.Lz;
         #endif
     }
-    sim.grid_reference_point = TV::Zero();
 
     ////// OPTIONAL: INITIAL PARTICLE VELOCITIES
     // sim.particles.v = ...

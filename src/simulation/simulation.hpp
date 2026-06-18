@@ -51,7 +51,6 @@ public:
   bool use_sparse = false;
   bool calculate_energy = false;
 
-  TV grid_reference_point = 2e10 * TV::Ones();
   TV gravity = TV::Zero();
 
   T min_dt = 1e-14; // minimum dt, also used to check end of frame, use with caution

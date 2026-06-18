@@ -74,48 +74,21 @@ void Simulation::remeshFixedInit(unsigned int sfx, unsigned int sfy, unsigned in
                                              {
                                                  return x1(0) < x2(0);
                                              } );
-    // T min_x = (*min_x_it)(0);
-    T min_x = std::floor((*min_x_it)(0)*one_over_dx) * dx; // NOTE: reference_point[0] = 0
+    T min_x = std::floor((*min_x_it)(0)*one_over_dx) * dx; 
     auto min_y_it = std::min_element( particles.x.begin(), particles.x.end(),
                                              []( const TV &x1, const TV &x2 )
                                              {
                                                  return x1(1) < x2(1);
                                              } );
-    // T min_y = (*min_y_it)(1);
-    T min_y = std::floor((*min_y_it)(1)*one_over_dx) * dx; // NOTE: reference_point[0] = 0
+    T min_y = std::floor((*min_y_it)(1)*one_over_dx) * dx; 
 #ifdef THREEDIM
     auto min_z_it = std::min_element( particles.x.begin(), particles.x.end(),
                                              []( const TV &x1, const TV &x2 )
                                              {
                                                  return x1(2) < x2(2);
                                              } );
-    // T min_z = (*min_z_it)(2);
-    T min_z = std::floor((*min_z_it)(2)*one_over_dx) * dx; // NOTE: reference_point[0] = 0
+    T min_z = std::floor((*min_z_it)(2)*one_over_dx) * dx; 
 #endif
-    
-    // check or grid_reference_point
-    if (grid_reference_point[0] < 1e10){
-        if (grid_reference_point[0] < min_x){
-            min_x = grid_reference_point[0];
-        }
-        else if (grid_reference_point[0] > max_x){
-            max_x = grid_reference_point[0];
-        }
-        if (grid_reference_point[1] < min_y){
-            min_y = grid_reference_point[1];
-        }
-        else if (grid_reference_point[1] > max_y){
-            max_y = grid_reference_point[1];
-        }
-#ifdef THREEDIM
-        if (grid_reference_point[2] < min_z){
-            min_z = grid_reference_point[2];
-        }
-        else if (grid_reference_point[2] > max_z){
-            max_z = grid_reference_point[2];
-        }
-#endif        
-    } // end if grid_reference_point
     
     // Save for remeshFixedCont
     max_x_init = max_x;
