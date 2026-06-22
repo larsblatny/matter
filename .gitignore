@@ -3,3 +3,4 @@ build/
 postprocess/backup/
 *.vscode/
 deps/
+/data
