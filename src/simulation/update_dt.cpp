@@ -16,19 +16,19 @@ void Simulation::updateDt(){
     }
 
 #ifdef WARNINGS
-    debug("               dt_max = ", dt_max);
+    debug("               max_dt = ", max_dt);
 #endif
 
     if (std::abs(max_speed) > 1e-10){
-        T dt_cfl = cfl * dx / max_speed;
+        T cfl_dt = cfl * dx / max_speed;
 #ifdef WARNINGS
-        debug("               dt_cfl = ", dt_cfl);
+        debug("               cfl_dt = ", cfl_dt);
 #endif
-        dt = std::min(dt_cfl, dt_max);
+        dt = std::min(cfl_dt, max_dt);
     } else {
-        dt = dt_max;
+        dt = max_dt;
 #ifdef WARNINGS
-        debug("               dt_cfl = not computed, max_speed too low");
+        debug("               cfl_dt = not computed, max_speed too low");
 #endif
     }
 
