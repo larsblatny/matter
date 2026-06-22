@@ -146,4 +146,94 @@ void regularSampleParticles(S& sim, T ppc = 4, unsigned int crop_to_shape = 0)
 
 }
 
+template <typename S>
+#ifdef THREEDIM
+void regularSampleParticles(S& sim, std::vector<TV> origins, std::vector<TV> sizes, T ppc = 8)
+#else
+void regularSampleParticles(S& sim, std::vector<TV> origins, std::vector<TV> sizes, T ppc = 4)
+#endif
+{
+    debug("Regular sampling of particles...");
+
+    std::vector<TV> samples;
+
+    sim.sampling_start_idx.push_back(0);
+
+    #ifdef THREEDIM
+        const T pSpacing = sim.dx / std::cbrt(ppc);
+        for (int i = 0; i < origins.size(); ++i) {
+            
+            const T Lx0 = origins[i](0);
+            const T Ly0 = origins[i](1);
+            const T Lz0 = origins[i](2);
+
+            const int nx = int(sizes[i](0) / pSpacing);
+            const int ny = int(sizes[i](1) / pSpacing);
+            const int nz = int(sizes[i](2) / pSpacing);
+
+            sim.sampling_start_idx.push_back(samples.size());
+
+            for (int j = 0; j < nx; ++j)
+                for (int k = 0; k < ny; ++k)
+                    for (int l = 0; l < nz; ++l)
+                    {
+                        TV point(
+                            Lx0 + (j + T(0.5)) * pSpacing,
+                            Ly0 + (k + T(0.5)) * pSpacing,
+                            Lz0 + (l + T(0.5)) * pSpacing
+                        );
+                        samples.push_back(point);
+                    }
+
+            sim.sampling_start_idx.push_back(samples.size());
+            debug("    box ", i, ": ", sim.sampling_start_idx[i + 1] - sim.sampling_start_idx[i], " particles");
+
+        }
+
+        sim.particle_volume = pSpacing * pSpacing * pSpacing;
+        sim.particle_mass   = sim.rho * sim.particle_volume;
+    #else
+        const T pSpacing = sim.dx / std::sqrt(ppc);
+
+        sim.sampling_start_idx.push_back(0);
+
+        for (int i = 0; i < origins.size(); ++i) {
+
+            const T Lx0 = origins[i](0);
+            const T Ly0 = origins[i](1);
+            const int nx = int(sizes[i](0) / pSpacing);
+            const int ny = int(sizes[i](1) / pSpacing);
+
+            sim.sampling_start_idx.push_back(samples.size());
+
+            for (int j = 0; j < nx; ++j)
+                for (int k = 0; k < ny; ++k)
+                {
+                    TV point(
+                        Lx0 + (j + T(0.5)) * pSpacing,
+                        Ly0 + (k + T(0.5)) * pSpacing
+                    );
+                    samples.push_back(point);
+                }
+
+            sim.sampling_start_idx.push_back(samples.size());
+            debug("    box ", i, ": ", sim.sampling_start_idx[i] - sim.sampling_start_idx[i], " particles");
+
+        }
+
+        sim.particle_volume = pSpacing * pSpacing;
+        sim.particle_mass   = sim.rho * sim.particle_volume;
+
+    #endif
+
+    sim.Np = samples.size();
+
+    debug("    Number of particle samples: ", sim.Np);
+    debug("    Particle spacing: ", pSpacing);
+
+    sim.particles = Particles(sim.Np);
+    sim.particles.x = samples;
+
+}
+
 #endif // REGULAR_SAMPLING_HPP
