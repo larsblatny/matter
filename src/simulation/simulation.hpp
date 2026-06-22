@@ -108,7 +108,7 @@ public:
   T grain_diameter = 1e-3;
   T I_ref = 0.279;
   T mu_1 = std::tan(20.9*M_PI/180.0);
-  T mu_2 = std::tan(32.8*M_PI/180.0);;
+  T mu_2 = std::tan(32.8*M_PI/180.0);
 
   // Prefactor for q in plasticity models
   T q_prefac  = 1.0 / std::sqrt(2.0); // q = factor * ||dev(tau)||
@@ -116,6 +116,9 @@ public:
   // Objects
   std::vector<std::unique_ptr<ObjectPlate>> plates;
   std::vector<std::unique_ptr<ObjectGeneral>> objects;
+
+  // Sampling index to account for multiple objects or boxes
+  std::vector<int> sampling_start_idx;
 
   // Functions
   void initialize(bool save = true, std::string dir = "output/", std::string name = "dummy");
