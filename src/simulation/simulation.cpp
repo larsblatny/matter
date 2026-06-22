@@ -217,96 +217,6 @@ void Simulation::simulate(){
 
 
 
-// Get particles min and max node index
-void Simulation::get_particles_minmax() {
-    const int node_lo_offset = 0;
-    const int node_hi_offset = 2;
-
-    std::vector<int> tminx(n_threads, INT32_MAX);
-    std::vector<int> tminy(n_threads, INT32_MAX);
-    std::vector<int> tminz(n_threads, INT32_MAX);
-    std::vector<int> tmaxx(n_threads, -INT32_MAX);
-    std::vector<int> tmaxy(n_threads, -INT32_MAX);
-    std::vector<int> tmaxz(n_threads, -INT32_MAX);
-
-    #pragma omp parallel num_threads(n_threads)
-    {
-        int tid = omp_get_thread_num();
-        int lminx = INT32_MAX;
-        int lminy = INT32_MAX;
-        int lminz = INT32_MAX;
-        int lmaxx = -INT32_MAX;
-        int lmaxy = -INT32_MAX;
-        int lmaxz = -INT32_MAX;
-
-        #pragma omp for nowait
-        for (int p=0; p<Np; p++) {
-            TV xp = particles.x[p];
-            int i_base = std::floor(xp(0)*one_over_dx - 0.5); 
-            int j_base = std::floor(xp(1)*one_over_dx - 0.5); 
-            int k_base = std::floor(xp(2)*one_over_dx - 0.5);
-
-            // get local min/max base
-            int ilo = i_base + node_lo_offset;
-            int ihi = i_base + node_hi_offset;
-            int jlo = j_base + node_lo_offset;
-            int jhi = j_base + node_hi_offset;
-            int klo = k_base + node_lo_offset;
-            int khi = k_base + node_hi_offset;
-
-            lminx = std::min(lminx, ilo);
-            lminy = std::min(lminy, jlo);
-            lminz = std::min(lminz, klo);
-            lmaxx = std::max(lmaxx, ihi);
-            lmaxy = std::max(lmaxy, jhi);
-            lmaxz = std::max(lmaxz, khi);
-        }
-
-        tminx[tid] = lminx;
-        tminy[tid] = lminy;
-        tminz[tid] = lminz;
-        tmaxx[tid] = lmaxx;
-        tmaxy[tid] = lmaxy;
-        tmaxz[tid] = lmaxz;
-    }
-
-    particles.minx_id = *std::min_element(tminx.begin(), tminx.end());
-    particles.miny_id = *std::min_element(tminy.begin(), tminy.end());
-    particles.minz_id = *std::min_element(tminz.begin(), tminz.end());
-    particles.maxx_id = *std::max_element(tmaxx.begin(), tmaxx.end());
-    particles.maxy_id = *std::max_element(tmaxy.begin(), tmaxy.end());
-    particles.maxz_id = *std::max_element(tmaxz.begin(), tmaxz.end());
-}
-
-// Mark active blocks
-void Simulation::mark_active_blocks_scan() {
-    scan_sparse_grid.clear_active();
-    const int B = scan_sparse_grid.get_B();
-
-    #pragma omp parallel for num_threads(n_threads)
-    for (int p=0; p<Np; p++) {
-        TV xp = particles.x[p];
-        int i_base = std::floor(xp(0)*one_over_dx - 0.5); 
-        int j_base = std::floor(xp(1)*one_over_dx - 0.5); 
-        int k_base = std::floor(xp(2)*one_over_dx - 0.5);
-
-        // loop on 3x3x3 stencil for quadratic B-splines
-        for (int i=i_base; i<i_base+3; ++i)
-        for (int j=j_base; j<j_base+3; ++j)
-        for (int k=k_base; k<k_base+3; ++k) {
-            int bx = BlockScanGrid::floor_div(i, B);
-            int by = BlockScanGrid::floor_div(j, B);
-            int bz = BlockScanGrid::floor_div(k, B);
-            scan_sparse_grid.mark_block_active(bx, by, bz);
-        }
-    } // end particles loop
-    
-    scan_sparse_grid.rebuild_sparse_grid();
-}
-
-
-
-
 
 void Simulation::advanceStep(){
 
@@ -330,7 +240,7 @@ void Simulation::advanceStep(){
         } 
         else {
             if (current_time_step==0) {
-                get_particles_minmax();
+                getParticlesMinMax();
             }
 
             // Reset the dense scan domain
@@ -340,8 +250,8 @@ void Simulation::advanceStep(){
             scan_sparse_grid.init(B, new_bmin, new_bmax, n_threads);
 
             // scan-based approach to mark active blocks and construct sparse grid
-            mark_active_blocks_scan();
-            reset_sparse_grid_scan();
+            markActiveBlocksScan();
+            resetSparseGridScan();
         }
     }
 
@@ -359,7 +269,7 @@ void Simulation::advanceStep(){
         P2G();
     } 
     else {
-        P2G_sparse_scan();
+        P2GSparseScan();
     }
     t_p2g.stop(); runtime_p2g += t_p2g.get_timing();
 
@@ -371,7 +281,7 @@ void Simulation::advanceStep(){
         explicitEulerUpdate();
     } 
     else {
-        explicitEulerUpdate_sparse_scan();
+        explicitEulerUpdateSparseScan();
     }
     t_euler.stop(); runtime_euler += t_euler.get_timing();
 
@@ -386,7 +296,7 @@ void Simulation::advanceStep(){
         G2P();
     } 
     else {
-        G2P_sparse_scan();
+        G2PSparseScan();
     }
     t_g2p.stop(); runtime_g2p += t_g2p.get_timing();
 

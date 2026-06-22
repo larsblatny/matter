@@ -112,7 +112,7 @@ void Simulation::G2P(){
 
 
 
-void Simulation::G2P_sparse_scan() {
+void Simulation::G2PSparseScan() {
     unsigned int plastic_count = 0;
 
     const int node_lo_offset = 0;

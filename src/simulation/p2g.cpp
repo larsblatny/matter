@@ -137,7 +137,7 @@ void Simulation::P2G(){
 } // end P2G
 
 
-void Simulation::P2G_sparse_scan() {
+void Simulation::P2GSparseScan() {
     #pragma omp parallel num_threads(n_threads)
     {
         // Thread local grid quantities

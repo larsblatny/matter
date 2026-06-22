@@ -69,7 +69,7 @@ void Simulation::explicitEulerUpdate(){
 
 
 
-void Simulation::explicitEulerUpdate_sparse_scan() {
+void Simulation::explicitEulerUpdateSparseScan() {
 #ifdef THREEDIM
 
     #pragma omp parallel for num_threads(n_threads)

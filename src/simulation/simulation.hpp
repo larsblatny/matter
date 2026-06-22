@@ -158,12 +158,12 @@ public:
   TM NeoHookeanPiola(TM & Fe);
   TM HenckyPiola(TM & Fe);
 
-  void get_particles_minmax();
-  void mark_active_blocks_scan();
-  void reset_sparse_grid_scan();
-  void P2G_sparse_scan();
-  void explicitEulerUpdate_sparse_scan();
-  void G2P_sparse_scan();
+  void getParticlesMinMax();
+  void markActiveBlocksScan();
+  void resetSparseGridScan();
+  void P2GSparseScan();
+  void explicitEulerUpdateSparseScan();
+  void G2PSparseScan();
 
 private:
 
