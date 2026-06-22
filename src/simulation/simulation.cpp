@@ -327,7 +327,8 @@ void Simulation::advanceStep(){
             } else {
                 remeshFixedCont();
             }
-        } else {
+        } 
+        else {
             if (current_time_step==0) {
                 get_particles_minmax();
             }
@@ -356,7 +357,8 @@ void Simulation::advanceStep(){
     timer t_p2g; t_p2g.start();
     if (!use_sparse) {
         P2G();
-    } else {
+    } 
+    else {
         P2G_sparse_scan();
     }
     t_p2g.stop(); runtime_p2g += t_p2g.get_timing();
@@ -367,7 +369,8 @@ void Simulation::advanceStep(){
     timer t_euler; t_euler.start();
     if (!use_sparse) {
         explicitEulerUpdate();
-    } else {
+    } 
+    else {
         explicitEulerUpdate_sparse_scan();
     }
     t_euler.stop(); runtime_euler += t_euler.get_timing();
@@ -381,7 +384,8 @@ void Simulation::advanceStep(){
     timer t_g2p; t_g2p.start();
     if (!use_sparse) {
         G2P();
-    } else {
+    } 
+    else {
         G2P_sparse_scan();
     }
     t_g2p.stop(); runtime_g2p += t_g2p.get_timing();

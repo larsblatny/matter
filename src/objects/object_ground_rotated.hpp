@@ -32,9 +32,6 @@ public:
 
         n(0) = st;
         n(1) = ct;
-        #ifdef THREEDIM
-            n(2) = 0;
-        #endif
 
         return n;
     }

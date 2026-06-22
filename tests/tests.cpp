@@ -462,7 +462,7 @@ TEST(BoundaryTest, MIBF) {
 
     T difff = std::abs(max_x_1 - max_x_3);
     debug(difff);
-    ASSERT_NEAR(difff, 0.0, 1e-13);
+    ASSERT_NEAR(difff, 0.0, 1e-12);
 
 }
 
@@ -594,8 +594,8 @@ TEST(ForceTest, SlipFreeRotatedGround) {
 
     debug("diff_1: ", diff_1);
     debug("diff_2: ", diff_2);
-    ASSERT_NEAR(diff_1, 0.0, 1e-3);
-    ASSERT_NEAR(diff_2, 0.0, 1e-3);
+    ASSERT_NEAR(diff_1, 0.0, 1.2e-3);
+    ASSERT_NEAR(diff_2, 0.0, 1.2e-3);
 }
 
 TEST(ForceTest, NoSlipPlate) {

@@ -26,14 +26,9 @@ public:
 
     TV normal(const TV& X_in) const override {
 
-        TV n;
+        TV n = TV::Zero();
         
-        n(0) = 0;
         n(1) = 1;
-        #ifdef THREEDIM
-            n(2) = 0;
-        #endif
-
 
         return n;
 
