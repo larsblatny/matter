@@ -53,6 +53,7 @@ public:
 
   TV gravity = TV::Zero();
 
+  T max_dt = -1; // negative number means determine it through the elastic wave speed
   T min_dt = 1e-14; // minimum dt, also used to check end of frame, use with caution
   T fps = 1; // frames per second
   T cfl = 0.5; // classical CFL coefficient
@@ -180,7 +181,6 @@ private:
   T final_time;
   T frame_dt;
   T dt;
-  T dt_max;
 
   std::string sim_name;
   std::string directory;

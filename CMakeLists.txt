@@ -10,6 +10,31 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
+# ===== OPTIMIZATION FLAGS FOR RELEASE BUILD =====
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    # Add aggressive optimization flags
+    if(MSVC)
+        # MSVC compiler flags
+        add_compile_options(/O2 /GL /arch:AVX2)
+        message(STATUS "Compile options: /O2 /GL /arch:AVX2")
+        string(APPEND CMAKE_EXE_LINKER_FLAGS " /LTCG")
+    else()
+        # GCC/Clang compiler flags
+        add_compile_options(-O3 -march=native -mtune=native -ftree-vectorize -fvariable-expansion-in-unroller)
+        message(STATUS "Compile options: -O3 -march=native -mtune=native -ftree-vectorize -fvariable-expansion-in-unroller")
+        # Suppress false positive allocation warnings from OpenVDB LTO analysis
+        string(APPEND CMAKE_CXX_FLAGS " -Wno-alloc-size-larger-than")
+    endif()
+endif()
+
+# Check LTO/IPO support — result used by src/CMakeLists.txt to enable it on the mpm target only
+include(CheckIPOSupported)
+check_ipo_supported(RESULT ipo_supported OUTPUT ipo_output)
+if(NOT ipo_supported)
+    message(STATUS "IPO/LTO not supported: ${ipo_output}")
+endif()
+# =================================================
+
 option (USE_VDB "Use OpenVDB part of the code" ON)
 message(STATUS "Use of OpenVDB: ${USE_VDB}")
 

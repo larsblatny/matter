@@ -112,8 +112,10 @@ void Simulation::simulate(){
     K = calculateBulkModulus(); // bulk modulus
     wave_speed = std::sqrt(E/rho); // elastic wave speed
 
-    dt_max = cfl_elastic * dx / wave_speed;
-
+    if (max_dt < 0) {
+        max_dt = cfl_elastic * dx / wave_speed;
+    }
+    
     frame_dt = 1.0 / fps;
 
     gravity_final = gravity;
@@ -165,7 +167,7 @@ void Simulation::simulate(){
     debug("Number of particles: ", Np);
     debug("Grid spacing dx:     ", dx);
     debug("Elastic wave speed:  ", wave_speed);
-    debug("Maximum dt:          ", dt_max);
+    debug("Maximum dt:          ", max_dt);
     debug("Particle volume:     ", particle_volume);
     debug("Particle mass:       ", particle_mass);
 
