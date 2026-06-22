@@ -44,6 +44,13 @@ public:
   std::vector<TM> tau;
 
   std::vector<T> Ed;
+
+  int minx_id;
+  int miny_id;
+  int minz_id;
+  int maxx_id;
+  int maxy_id;
+  int maxz_id;
 };
 
 class Grid{

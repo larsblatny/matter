@@ -11,6 +11,103 @@ void Simulation::resizeGrid(){
         grid.friction.resize(grid_nodes); std::fill( grid.friction.begin(), grid.friction.end(), 0.0 );
 }
 
+void Simulation::resetSparseGridScan() {
+    grid.v.resize(scan_sparse_grid.num_active_nodes()); std::fill( grid.v.begin(),    grid.v.end(),    TV::Zero() );
+    grid.flip.resize(scan_sparse_grid.num_active_nodes()); std::fill( grid.flip.begin(), grid.flip.end(), TV::Zero() );
+    grid.force.resize(scan_sparse_grid.num_active_nodes()); std::fill( grid.force.begin(), grid.force.end(), TV::Zero() );
+    grid.mass.resize(scan_sparse_grid.num_active_nodes()); std::fill( grid.mass.begin(), grid.mass.end(), 0.0        );
+    if (use_mibf) {
+        grid.friction.resize(scan_sparse_grid.num_active_nodes()); std::fill( grid.friction.begin(), grid.friction.end(), 0.0 );
+    }
+}
+
+// Get particles min and max node index
+void Simulation::getParticlesMinMax() {
+    const int node_lo_offset = 0;
+    const int node_hi_offset = 2;
+
+    std::vector<int> tminx(n_threads, INT32_MAX);
+    std::vector<int> tminy(n_threads, INT32_MAX);
+    std::vector<int> tminz(n_threads, INT32_MAX);
+    std::vector<int> tmaxx(n_threads, -INT32_MAX);
+    std::vector<int> tmaxy(n_threads, -INT32_MAX);
+    std::vector<int> tmaxz(n_threads, -INT32_MAX);
+
+    #pragma omp parallel num_threads(n_threads)
+    {
+        int tid = omp_get_thread_num();
+        int lminx = INT32_MAX;
+        int lminy = INT32_MAX;
+        int lminz = INT32_MAX;
+        int lmaxx = -INT32_MAX;
+        int lmaxy = -INT32_MAX;
+        int lmaxz = -INT32_MAX;
+
+        #pragma omp for nowait
+        for (int p=0; p<Np; p++) {
+            TV xp = particles.x[p];
+            int i_base = std::floor(xp(0)*one_over_dx - 0.5); 
+            int j_base = std::floor(xp(1)*one_over_dx - 0.5); 
+            int k_base = std::floor(xp(2)*one_over_dx - 0.5);
+
+            // get local min/max base
+            int ilo = i_base + node_lo_offset;
+            int ihi = i_base + node_hi_offset;
+            int jlo = j_base + node_lo_offset;
+            int jhi = j_base + node_hi_offset;
+            int klo = k_base + node_lo_offset;
+            int khi = k_base + node_hi_offset;
+
+            lminx = std::min(lminx, ilo);
+            lminy = std::min(lminy, jlo);
+            lminz = std::min(lminz, klo);
+            lmaxx = std::max(lmaxx, ihi);
+            lmaxy = std::max(lmaxy, jhi);
+            lmaxz = std::max(lmaxz, khi);
+        }
+
+        tminx[tid] = lminx;
+        tminy[tid] = lminy;
+        tminz[tid] = lminz;
+        tmaxx[tid] = lmaxx;
+        tmaxy[tid] = lmaxy;
+        tmaxz[tid] = lmaxz;
+    }
+
+    particles.minx_id = *std::min_element(tminx.begin(), tminx.end());
+    particles.miny_id = *std::min_element(tminy.begin(), tminy.end());
+    particles.minz_id = *std::min_element(tminz.begin(), tminz.end());
+    particles.maxx_id = *std::max_element(tmaxx.begin(), tmaxx.end());
+    particles.maxy_id = *std::max_element(tmaxy.begin(), tmaxy.end());
+    particles.maxz_id = *std::max_element(tmaxz.begin(), tmaxz.end());
+}
+
+// Mark active blocks
+void Simulation::markActiveBlocksScan() {
+    scan_sparse_grid.clear_active();
+    const int B = scan_sparse_grid.get_B();
+
+    #pragma omp parallel for num_threads(n_threads)
+    for (int p=0; p<Np; p++) {
+        TV xp = particles.x[p];
+        int i_base = std::floor(xp(0)*one_over_dx - 0.5); 
+        int j_base = std::floor(xp(1)*one_over_dx - 0.5); 
+        int k_base = std::floor(xp(2)*one_over_dx - 0.5);
+
+        // loop on 3x3x3 stencil for quadratic B-splines
+        for (int i=i_base; i<i_base+3; ++i)
+        for (int j=j_base; j<j_base+3; ++j)
+        for (int k=k_base; k<k_base+3; ++k) {
+            int bx = BlockScanGrid::floor_div(i, B);
+            int by = BlockScanGrid::floor_div(j, B);
+            int bz = BlockScanGrid::floor_div(k, B);
+            scan_sparse_grid.mark_block_active(bx, by, bz);
+        }
+    } // end particles loop
+    
+    scan_sparse_grid.rebuild_sparse_grid();
+}
+
 // A fixed grid - must hard-coded for every simulation
 void Simulation::remeshFixed(unsigned int extra_nodes){
 
@@ -64,45 +161,21 @@ void Simulation::remeshFixedInit(unsigned int sfx, unsigned int sfy, unsigned in
                                              {
                                                  return x1(0) < x2(0);
                                              } );
-    T min_x = (*min_x_it)(0);
+    T min_x = std::floor((*min_x_it)(0)*one_over_dx) * dx; 
     auto min_y_it = std::min_element( particles.x.begin(), particles.x.end(),
                                              []( const TV &x1, const TV &x2 )
                                              {
                                                  return x1(1) < x2(1);
                                              } );
-    T min_y = (*min_y_it)(1);
+    T min_y = std::floor((*min_y_it)(1)*one_over_dx) * dx; 
 #ifdef THREEDIM
     auto min_z_it = std::min_element( particles.x.begin(), particles.x.end(),
                                              []( const TV &x1, const TV &x2 )
                                              {
                                                  return x1(2) < x2(2);
                                              } );
-    T min_z = (*min_z_it)(2);
+    T min_z = std::floor((*min_z_it)(2)*one_over_dx) * dx; 
 #endif
-    
-    // check or grid_reference_point
-    if (grid_reference_point[0] < 1e10){
-        if (grid_reference_point[0] < min_x){
-            min_x = grid_reference_point[0];
-        }
-        else if (grid_reference_point[0] > max_x){
-            max_x = grid_reference_point[0];
-        }
-        if (grid_reference_point[1] < min_y){
-            min_y = grid_reference_point[1];
-        }
-        else if (grid_reference_point[1] > max_y){
-            max_y = grid_reference_point[1];
-        }
-#ifdef THREEDIM
-        if (grid_reference_point[2] < min_z){
-            min_z = grid_reference_point[2];
-        }
-        else if (grid_reference_point[2] > max_z){
-            max_z = grid_reference_point[2];
-        }
-#endif        
-    } // end if grid_reference_point
     
     // Save for remeshFixedCont
     max_x_init = max_x;

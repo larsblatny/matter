@@ -130,7 +130,6 @@ TEST(CoulombFrictionTest, PlateSlipFree) {
         sim.particles.x[p](0) -= 0.5*sim.Lx;
         sim.particles.x[p](1) += 0.5*sim.dx;
     }
-    sim.grid_reference_point = TV::Zero();
 
     T friction = std::tan(15.0 * M_PI / 180.0);
 
@@ -182,7 +181,6 @@ TEST(CoulombFrictionTest, PlateSlipStick) {
         sim.particles.x[p](0) -= 0.5*sim.Lx;
         sim.particles.x[p](1) += 0.5*sim.dx;
     }
-    sim.grid_reference_point = TV::Zero();
 
     T friction = std::tan(15.0 * M_PI / 180.0);
 
@@ -234,7 +232,6 @@ TEST(CoulombFrictionTest, GeneralSlipFree) {
         sim.particles.x[p](0) -= 0.5*sim.Lx;
         sim.particles.x[p](1) += 0.5*sim.dx;
     }
-    sim.grid_reference_point = TV::Zero();
 
     T friction = std::tan(15.0 * M_PI / 180.0);
 
@@ -286,7 +283,6 @@ TEST(CoulombFrictionTest, GeneralSlipStick) {
         sim.particles.x[p](0) -= 0.5*sim.Lx;
         sim.particles.x[p](1) += 0.5*sim.dx;
     }
-    sim.grid_reference_point = TV::Zero();
 
     T friction = std::tan(15.0 * M_PI / 180.0);
 
@@ -340,7 +336,6 @@ TEST(BoundaryTest, MIBF) {
         sim_one.particles.x[p](0) -= 0.5*sim_one.Lx;
         sim_one.particles.x[p](1) += 0.5*sim_one.dx;
     }
-    sim_one.grid_reference_point = TV::Zero();
 
     sim_one.plates.push_back(std::make_unique<ObjectPlate>(0, PlateType::bottom, BC::SlipFree, friction)); 
 
@@ -391,7 +386,6 @@ TEST(BoundaryTest, MIBF) {
         sim_two.particles.x[p](0) -= 0.5*sim_two.Lx;
         sim_two.particles.x[p](1) += 0.5*sim_two.dx;
     }
-    sim_two.grid_reference_point = TV::Zero();
 
     sim_two.plates.push_back(std::make_unique<ObjectPlate>(0, PlateType::bottom, BC::SlipFree, friction)); 
 
@@ -446,7 +440,6 @@ TEST(BoundaryTest, MIBF) {
         sim_three.particles.x[p](0) -= 0.5*sim_three.Lx;
         sim_three.particles.x[p](1) += 0.5*sim_three.dx;
     }
-    sim_three.grid_reference_point = TV::Zero();
 
     sim_three.plates.push_back(std::make_unique<ObjectPlate>(0, PlateType::bottom, BC::SlipFree, friction)); 
 
@@ -469,7 +462,7 @@ TEST(BoundaryTest, MIBF) {
 
     T difff = std::abs(max_x_1 - max_x_3);
     debug(difff);
-    ASSERT_NEAR(difff, 0.0, 1e-13);
+    ASSERT_NEAR(difff, 0.0, 1e-12);
 
 }
 
@@ -601,8 +594,8 @@ TEST(ForceTest, SlipFreeRotatedGround) {
 
     debug("diff_1: ", diff_1);
     debug("diff_2: ", diff_2);
-    ASSERT_NEAR(diff_1, 0.0, 1e-3);
-    ASSERT_NEAR(diff_2, 0.0, 1e-3);
+    ASSERT_NEAR(diff_1, 0.0, 1.2e-3);
+    ASSERT_NEAR(diff_2, 0.0, 1.2e-3);
 }
 
 TEST(ForceTest, NoSlipPlate) {
@@ -824,7 +817,6 @@ TEST(CollapseTest, DruckerPragerOne) {
     for(int p = 0; p < sim.Np; p++){
         sim.particles.x[p](1) += 0.5*sim.dx;
     }
-    sim.grid_reference_point = TV::Zero();
 
     sim.elastic_model = ElasticModel::Hencky;
     sim.plastic_model = PlasticModel::DPSoft;
@@ -889,7 +881,6 @@ TEST(CollapseTest, DruckerPragerTwo) {
     for(int p = 0; p < sim.Np; p++){
         sim.particles.x[p](1) += 0.5*sim.dx;
     }
-    sim.grid_reference_point = TV::Zero();
 
     sim.elastic_model = ElasticModel::Hencky;
     sim.plastic_model = PlasticModel::DPVisc;

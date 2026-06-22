@@ -14,10 +14,7 @@ Simulation::Simulation(){
     runtime_g2p = 0;
     runtime_euler = 0;
     runtime_defgrad = 0;
-    runtime_total = 0;
-
-    // create grid
-    grid = Grid();
+    runtime_total = 0;    
 }
 
 
@@ -139,6 +136,32 @@ void Simulation::simulate(){
         }
     }
 
+    // Initialize grid
+    if (use_sparse){
+        debug("Using sparse grid.");
+
+        if (pbc){
+            debug("ERROR: Sparse grid (use_sparse) is not yet compatible with periodic boundary conditions (pbc), please set one of them to false.");
+            return;
+        }
+        if (use_musl){
+            debug("ERROR: Sparse grid (use_sparse) is not yet compatible with MUSL (use_musl), please set one of them to false.");
+            return;
+        }
+        if (dim == 2){
+            debug("ERROR: Sparse grid (use_sparse) is not yet compatible with 2D, please set use_sparse = false, or use 3D.");
+            return;
+        }
+
+        int B = 4; // Block size
+        BlockScanGrid::I3 bmin{0, 0, 0}; // Needs to be reset before calling scan_sparse_grid.init()
+        BlockScanGrid::I3 bmax{8, 8, 8}; // Needs to be reset before calling scan_sparse_grid.init()
+        scan_sparse_grid.init(B, bmin, bmax, int(n_threads));
+    }
+    else{
+        grid = Grid();
+    }
+
     debug("Number of particles: ", Np);
     debug("Grid spacing dx:     ", dx);
     debug("Elastic wave speed:  ", wave_speed);
@@ -178,7 +201,7 @@ void Simulation::simulate(){
             if (save_sim){
                 saveParticleData();
                 saveForces();
-                if (save_grid)
+                if (save_grid && !use_sparse) // TODO: save sparse grid data has not been implemented
                     saveGridData();
                 if (save_avg)
                     saveAvgData();
@@ -206,7 +229,6 @@ void Simulation::simulate(){
 
 
 
-
 void Simulation::advanceStep(){
 
     for (auto& obj: objects) obj->force.setZero();
@@ -214,46 +236,75 @@ void Simulation::advanceStep(){
 
     updateDt();
 
-    if (pbc){
+    if (pbc){ // TODO: not yet supported by sparse grid
         if (current_time_step == 0)
             remeshFixed(4);
     }
     else{
-        if (current_time_step == 0) {
-            remeshFixedInit(2,2,2);
-        } else {
-            remeshFixedCont();
+        if (!use_sparse) {
+            if (current_time_step == 0) {
+                remeshFixedInit(2,2,2);
+            } else {
+                remeshFixedCont();
+            }
+        } 
+        else {
+            if (current_time_step==0) {
+                getParticlesMinMax();
+            }
+
+            // Reset the dense scan domain
+            int B = scan_sparse_grid.get_B();
+            BlockScanGrid::I3 new_bmin{BlockScanGrid::floor_div(particles.minx_id, B)-1, BlockScanGrid::floor_div(particles.miny_id, B)-1, BlockScanGrid::floor_div(particles.minz_id, B)-1};
+            BlockScanGrid::I3 new_bmax{BlockScanGrid::floor_div(particles.maxx_id, B)+2, BlockScanGrid::floor_div(particles.maxy_id, B)+2, BlockScanGrid::floor_div(particles.maxz_id, B)+2};
+            scan_sparse_grid.init(B, new_bmin, new_bmax, n_threads);
+
+            // scan-based approach to mark active blocks and construct sparse grid
+            markActiveBlocksScan();
+            resetSparseGridScan();
         }
     }
 
-    if (pbc){
+    if (pbc){ // TODO: not yet supported by sparse grid
         PBCAddParticles(4);
     }
 
-    resizeGrid();
+    if (!use_sparse) {
+        resizeGrid();
+    }
 
     timer t_p2g; t_p2g.start();
-    P2G();
+    if (!use_sparse) {
+        P2G();
+    } 
+    else {
+        P2GSparseScan();
+    }
     t_p2g.stop(); runtime_p2g += t_p2g.get_timing();
 
-    // checkMassConservation();
-    // checkMomentumConservation();
-
     timer t_euler; t_euler.start();
-    explicitEulerUpdate();
+    if (!use_sparse) {
+        explicitEulerUpdate();
+    } 
+    else {
+        explicitEulerUpdateSparseScan();
+    }
     t_euler.stop(); runtime_euler += t_euler.get_timing();
-
-    // addExternalParticleGravity();
 
     if (pbc){
         PBCDelParticles();
     }
 
     timer t_g2p; t_g2p.start();
-    G2P();
+    if (!use_sparse) {
+        G2P();
+    } 
+    else {
+        G2PSparseScan();
+    }
     t_g2p.stop(); runtime_g2p += t_g2p.get_timing();
 
-    if (use_musl){
+    if (use_musl){ // TODO: not yet supported by sparse grid
         MUSL();
 
         timer t_defgrad; t_defgrad.start();
@@ -261,7 +312,9 @@ void Simulation::advanceStep(){
         t_defgrad.stop(); runtime_defgrad += t_defgrad.get_timing();
     }
 
-    positionUpdate();
+    if (!use_sparse) {
+        positionUpdate();
+    }
 
     moveObjects();
 

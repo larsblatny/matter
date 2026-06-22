@@ -15,10 +15,12 @@
 
 #include "../tools.hpp"
 #include "../data_structures.hpp"
+#include "../block_scan_grid.hpp"
 #include "../timer.hpp"
 
 #include "../objects/object_general.hpp"
 #include "../objects/object_plate.hpp"
+
 
 class Simulation{
 public:
@@ -46,9 +48,9 @@ public:
   bool save_avg = false;
   bool use_mibf = false;
   bool use_musl = false;
+  bool use_sparse = false;
   bool calculate_energy = false;
 
-  TV grid_reference_point = 2e10 * TV::Ones();
   TV gravity = TV::Zero();
 
   T min_dt = 1e-14; // minimum dt, also used to check end of frame, use with caution
@@ -153,6 +155,13 @@ public:
   TM NeoHookeanPiola(TM & Fe);
   TM HenckyPiola(TM & Fe);
 
+  void getParticlesMinMax();
+  void markActiveBlocksScan();
+  void resetSparseGridScan();
+  void P2GSparseScan();
+  void explicitEulerUpdateSparseScan();
+  void G2PSparseScan();
+
 private:
 
   unsigned int current_time_step = 0;
@@ -192,6 +201,7 @@ private:
   T apicDinverse;
 
   // Grid handling and remeshing
+  BlockScanGrid scan_sparse_grid;
   Grid grid;
   unsigned int Nx, Ny;
 #ifdef THREEDIM

@@ -66,3 +66,45 @@ void Simulation::explicitEulerUpdate(){
     } // end for i
 
 } // end explicitEulerUpdate
+
+
+
+void Simulation::explicitEulerUpdateSparseScan() {
+#ifdef THREEDIM
+
+    #pragma omp parallel for num_threads(n_threads)
+    for (int l=0; l<scan_sparse_grid.num_active_nodes(); ++l) { // loop on active nodes only
+        T mi = grid.mass[l];
+        if (mi*particle_mass > 0) {
+            grid.v[l] /= mi; // momentum to velocity
+            if (use_mibf) {
+                grid.friction[l] /= mi;
+            }
+
+            // Scale grid mass with particle mass
+            grid.mass[l] *= particle_mass;
+            mi = grid.mass[l];
+
+            TV velocity_increment = -dt * particle_volume * grid.force[l] / mi + dt * gravity;
+
+            TV old_vi = grid.v[l];
+            TV new_vi = old_vi + velocity_increment;
+
+            // Impose boundary conditions
+            auto ijk = scan_sparse_grid.gid_to_ijk(l);
+            int ix = ijk.x;
+            int jy = ijk.y;
+            int kz = ijk.z;
+            TV Xi(ix*dx, jy*dx, kz*dx);
+
+            boundaryCollision(mi, l, Xi, new_vi);
+
+            grid.v[l] = new_vi;
+            grid.flip[l] = new_vi - old_vi;
+        } else {
+            grid.v[l].setZero();
+        }
+    }
+#endif
+
+}
