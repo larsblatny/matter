@@ -325,14 +325,15 @@ void Simulation::advanceStep(){
 
 
 void Simulation::moveObjects(){
-    for (auto& obj : plates) {
-        obj->move(dt, frame_dt, time);
-    }
-
-    for (auto& obj : objects) {
-        obj->move(time);
-    }
-}
+    if ( !gravity_special || (gravity_special && time >= gravity_time) ){
+        for (auto& obj : plates) {
+            obj->move(dt, frame_dt, time);
+        }
+        for (auto& obj : objects) {
+            obj->move(time);
+        }
+    } // endif
+} // end moveObjects
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
