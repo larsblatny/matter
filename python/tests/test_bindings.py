@@ -211,6 +211,42 @@ def test_sample_particles_multi_populates_start_indices():
 
 
 # --------------------------------------------------------------------------- #
+# regular_sample_particles / regular_sample_particles_multi
+#
+# Unlike sample_particles(...), these place particles on a fixed grid rather than
+# via Poisson-disk sampling, and sim.dx is an INPUT (used to derive spacing), not
+# an output - it must be set before calling.
+# --------------------------------------------------------------------------- #
+
+def test_regular_sample_particles_populates_fields_within_domain():
+    sim = matter.Simulation()
+    _set_domain(sim)
+    sim.rho = 1000
+    sim.dx = 0.05
+    matter.regular_sample_particles(sim)
+    assert sim.Np > 0
+    assert len(sim.particles.x) == sim.Np
+    assert sim.particle_mass > 0
+    upper = vec(sim.Lx, sim.Ly, getattr(sim, "Lz", 0.0))
+    for pos in sim.particles.x:
+        for d in range(DIM):
+            assert -1e-9 <= pos[d] <= upper[d] + 1e-9
+
+
+def test_regular_sample_particles_multi_populates_particles():
+    sim = matter.Simulation()
+    sim.rho = 1000
+    sim.dx = 0.05
+    origins = [vec(0, 0), vec(2, 0)]
+    sizes = [vec(1, 1, 1), vec(1, 1, 1)]
+    matter.regular_sample_particles_multi(sim, origins, sizes)
+    assert sim.Np > 0
+    assert len(sim.particles.x) == sim.Np
+    assert len(sim.sampling_start_idx) == len(origins) + 1
+    assert sim.sampling_start_idx[-1] == sim.Np
+
+
+# --------------------------------------------------------------------------- #
 # ObjectPlate
 # --------------------------------------------------------------------------- #
 
@@ -303,6 +339,32 @@ def test_object_vdb_construction_and_add_object():
     min_bbox, max_bbox = stored.bounds()
     assert len(min_bbox) == DIM
     assert len(max_bbox) == DIM
+
+
+@pytest.mark.skipif(not hasattr(matter, "regular_sample_particles_from_vdb"), reason="built without USE_VDB")
+def test_regular_sample_particles_from_vdb_populates_particles():
+    vdb_path = str(LEVELSETS_DIR / "box.vdb")
+    obj = matter.ObjectVdb(vdb_path)
+    sim = matter.Simulation()
+    sim.rho = 1000
+    sim.dx = 0.5  # regular_sample_particles_from_vdb takes dx as an INPUT, not an output
+    matter.regular_sample_particles_from_vdb(sim, obj)
+    assert sim.Np > 0
+    assert len(sim.particles.x) == sim.Np
+
+
+@pytest.mark.skipif(not hasattr(matter, "regular_sample_particles_from_vdb_multi"), reason="built without USE_VDB")
+def test_regular_sample_particles_from_vdb_multi_populates_particles():
+    vdb_path = str(LEVELSETS_DIR / "box.vdb")
+    objects = [matter.ObjectVdb(vdb_path), matter.ObjectVdb(vdb_path)]
+    sim = matter.Simulation()
+    sim.rho = 1000
+    sim.dx = 0.5
+    matter.regular_sample_particles_from_vdb_multi(sim, objects)
+    assert sim.Np > 0
+    assert len(sim.particles.x) == sim.Np
+    assert len(sim.sampling_start_idx) == len(objects) + 1
+    assert sim.sampling_start_idx[-1] == sim.Np
 
 
 # --------------------------------------------------------------------------- #

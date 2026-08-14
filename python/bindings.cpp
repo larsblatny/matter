@@ -12,6 +12,7 @@
 #include "../src/data_structures.hpp"
 #include "../src/simulation/simulation.hpp"
 #include "../src/sampling/sampling_particles.hpp"
+#include "../src/sampling/regular_sampling_particles.hpp"
 
 #include "../src/objects/object_general.hpp"
 #include "../src/objects/object_plate.hpp"
@@ -28,6 +29,7 @@
 #ifdef USE_VDB
 #include "../src/objects/object_vdb.hpp"
 #include "../src/sampling/sampling_particles_vdb.hpp"
+#include "../src/sampling/regular_sampling_particles_vdb.hpp"
 #endif
 
 namespace py = pybind11;
@@ -408,6 +410,27 @@ PYBIND11_MODULE(matter, m) {
        py::arg("ppc") = 6, py::arg("attempts") = 200, py::arg("seed") = 42);
 #endif
 
+    // regular_sample_particles/_multi place particles on a fixed grid instead of via
+    // Poisson-disk sampling. Unlike sample_particles(...), sim.dx is an INPUT here
+    // (used to derive particle spacing), not an output - set it before calling.
+#ifdef THREEDIM
+    m.def("regular_sample_particles", [](Simulation& sim, T ppc, unsigned int crop_to_shape) {
+        regularSampleParticles(sim, ppc, crop_to_shape);
+    }, py::arg("sim"), py::arg("ppc") = 8, py::arg("crop_to_shape") = 0);
+
+    m.def("regular_sample_particles_multi", [](Simulation& sim, std::vector<TV> origins, std::vector<TV> sizes, T ppc) {
+        regularSampleParticles(sim, origins, sizes, ppc);
+    }, py::arg("sim"), py::arg("origins"), py::arg("sizes"), py::arg("ppc") = 8);
+#else
+    m.def("regular_sample_particles", [](Simulation& sim, T ppc, unsigned int crop_to_shape) {
+        regularSampleParticles(sim, ppc, crop_to_shape);
+    }, py::arg("sim"), py::arg("ppc") = 4, py::arg("crop_to_shape") = 0);
+
+    m.def("regular_sample_particles_multi", [](Simulation& sim, std::vector<TV> origins, std::vector<TV> sizes, T ppc) {
+        regularSampleParticles(sim, origins, sizes, ppc);
+    }, py::arg("sim"), py::arg("origins"), py::arg("sizes"), py::arg("ppc") = 4);
+#endif
+
 #ifdef USE_VDB
 #ifdef THREEDIM
     m.def("sample_particles_from_vdb", [](Simulation& sim, ObjectVdb& obj, T k_radius, T ppc) {
@@ -425,6 +448,25 @@ PYBIND11_MODULE(matter, m) {
     m.def("sample_particles_from_vdb_multi", [](Simulation& sim, std::vector<ObjectVdb> objects, T k_radius, T ppc) {
         sampleParticlesFromVdb(sim, objects, k_radius, ppc);
     }, py::arg("sim"), py::arg("objects"), py::arg("k_radius"), py::arg("ppc") = 6);
+#endif
+
+    // Same sim.dx-is-an-input caveat as regular_sample_particles above.
+#ifdef THREEDIM
+    m.def("regular_sample_particles_from_vdb", [](Simulation& sim, ObjectVdb& obj, T ppc) {
+        regularSampleParticlesFromVdb(sim, obj, ppc);
+    }, py::arg("sim"), py::arg("obj"), py::arg("ppc") = 8);
+
+    m.def("regular_sample_particles_from_vdb_multi", [](Simulation& sim, std::vector<ObjectVdb> objects, T ppc) {
+        regularSampleParticlesFromVdb(sim, objects, ppc);
+    }, py::arg("sim"), py::arg("objects"), py::arg("ppc") = 8);
+#else
+    m.def("regular_sample_particles_from_vdb", [](Simulation& sim, ObjectVdb& obj, T ppc) {
+        regularSampleParticlesFromVdb(sim, obj, ppc);
+    }, py::arg("sim"), py::arg("obj"), py::arg("ppc") = 4);
+
+    m.def("regular_sample_particles_from_vdb_multi", [](Simulation& sim, std::vector<ObjectVdb> objects, T ppc) {
+        regularSampleParticlesFromVdb(sim, objects, ppc);
+    }, py::arg("sim"), py::arg("objects"), py::arg("ppc") = 4);
 #endif
 #endif
 }
