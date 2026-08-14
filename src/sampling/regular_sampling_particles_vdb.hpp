@@ -122,8 +122,6 @@ void regularSampleParticlesFromVdb(S& sim, std::vector<ObjectVdb> objects, T ppc
         obj.bounds(min_corner, max_corner);
         TV L = max_corner - min_corner;
 
-        sim.sampling_start_idx.push_back(samples.size());
-
         #ifdef THREEDIM
         debug("    Min corner: ", min_corner(0), ", ", min_corner(1), ", ", min_corner(2));
         debug("    Max corner: ", max_corner(0), ", ", max_corner(1), ", ", max_corner(2));
@@ -160,8 +158,6 @@ void regularSampleParticlesFromVdb(S& sim, std::vector<ObjectVdb> objects, T ppc
 
         const int nx = int(L(0) / pSpacing);
         const int ny = int(L(1) / pSpacing);
-
-        std::vector<TV> samples;
 
         for (int i = 0; i < nx; ++i)
         for (int j = 0; j < ny; ++j)
