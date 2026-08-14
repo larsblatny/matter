@@ -203,7 +203,8 @@ def test_sample_particles_is_deterministic_given_a_seed():
 def test_sample_particles_multi_populates_start_indices():
     sim = matter.Simulation()
     origins = [vec(0, 0), vec(2, 0)]
-    sizes = [vec(1, 1), vec(1, 1)]
+    sizes = [vec(1, 1, 1), vec(1, 1, 1)]  # non-zero in every dim - vec() defaults z=0, which
+                                          # would silently make this a zero-volume box in 3D
     matter.sample_particles_multi(sim, origins, sizes, 0.05, seed=3)
     assert sim.Np > 0
     assert len(sim.sampling_start_idx) == len(origins) + 1

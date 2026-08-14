@@ -4,7 +4,10 @@
 # version of python/examples/collapse.py - a few particles, 3 frames, single
 # thread for determinism) entirely through the Python bindings and compares the
 # resulting particle positions/velocities against a frozen "golden" snapshot
-# checked into python/tests/golden/collapse_mini.npz.
+# checked into python/tests/golden/collapse_mini_{2,3}d.npz - one file per
+# dimensionality, since THREEDIM (src/tools.hpp) changes what this scenario
+# even means (different Lz/gravity/box shape) and switching it shouldn't
+# invalidate the golden data for whichever dimension you're not currently in.
 #
 # Why frozen values instead of building examples/collapse.cpp and diff-ing live
 # output each run: the golden values were originally verified byte-for-byte
@@ -33,7 +36,7 @@ import pytest
 import matter
 
 DIM = matter.Simulation().dim
-GOLDEN_PATH = Path(__file__).resolve().parent / "golden" / "collapse_mini.npz"
+GOLDEN_PATH = Path(__file__).resolve().parent / "golden" / f"collapse_mini_{DIM}d.npz"
 
 
 def vec(x=0.0, y=0.0, z=0.0):
@@ -93,17 +96,15 @@ def build_mini_collapse_sim():
     return sim
 
 
-@pytest.mark.skipif(not GOLDEN_PATH.exists(), reason="no golden file - see this file's docstring to generate one")
+@pytest.mark.skipif(not GOLDEN_PATH.exists(),
+                     reason=f"no {DIM}D golden file - see this file's docstring to generate one")
 def test_collapse_mini_matches_golden():
     sim = build_mini_collapse_sim()
     sim.simulate()
     assert sim.exit == 0
 
     golden = np.load(GOLDEN_PATH)
-    assert int(golden["dim"][0]) == DIM, (
-        "golden file was captured for a different dimensionality (2D/3D) than "
-        "this build - regenerate it after switching THREEDIM"
-    )
+    assert int(golden["dim"][0]) == DIM  # sanity check against a mislabeled/miscopied golden file
     assert sim.Np == int(golden["Np"][0])
     assert sim.dx == pytest.approx(float(golden["dx"][0]), rel=1e-8)
 
