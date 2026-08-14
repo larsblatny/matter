@@ -119,9 +119,23 @@ Download [VSCode](https://code.visualstudio.com/) and [Docker](https://www.docke
  
 You can "clean" using `make clean` and `make clean-cache`, e.g., if you want to change CMake options.
 
+### Python bindings
+
+As an alternative to editing and recompiling `mpm.cpp` for every new simulation, _Matter_ also ships Python bindings (via [pybind11](https://github.com/pybind/pybind11)) exposing the same `Simulation`, `Particles`, and object classes, so simulations can be set up and run from a `.py` script instead.
+
+The bindings build automatically as part of step 5 above, controlled by the CMake option `BUILD_PYTHON_BINDINGS` (default `ON`; disable with `cmake -DBUILD_PYTHON_BINDINGS=OFF ..`). This requires Python 3 development headers (e.g. `python3-dev` on Linux) to be installed; `pybind11` itself is fetched automatically by CMake, no manual installation needed. As with the C++ side, the dimension (2D/3D) is fixed at compile time via `THREEDIM` in `tools.hpp`, so the Python module reflects whichever dimension the project was last built with.
+
+After building, the compiled module (`matter.cpython-*.so`) is placed in `build/python/`. Run any script with that directory on `PYTHONPATH`:  
+`PYTHONPATH=build/python python3 your_script.py`
+
+See the next section for a minimal example script. Full, runnable example scripts (Python translations of the C++ examples in the `examples` folder, including objects and energy-conservation checks) are in `python/examples/`. Tests for the bindings themselves live in `python/tests/`, runnable with `PYTHONPATH=build/python python3 -m pytest python/tests`, or alongside the C++ test suite via `ctest -R python_bindings_tests`.
+
 ### Example of setup file
 
-Here is a minimal setup file `mpm.cpp` for a simple granular collapse.    
+Here is a minimal setup for a simple granular collapse, shown both as a C++ setup file (`mpm.cpp`) and as the equivalent Python script (see [Python bindings](#python-bindings) above for how to build/run it).
+
+<details>
+<summary><b>C++ (<code>mpm.cpp</code>)</b></summary>
 
 ```cpp
 #include "tools.hpp"
@@ -167,7 +181,45 @@ int main(){
 }
 ```
 
-In the `examples` folder, other examples will be archived (to use one of these examples, simply copy it into the `src` folder and rename it `mpm.cpp`).
+</details>
+
+<details>
+<summary><b>Python</b></summary>
+
+```python
+import matter
+
+sim = matter.Simulation()
+sim.initialize(True, "output/", "collapse")
+
+sim.end_frame = 20  # last frame to simulate
+sim.fps = 10         # frames per second
+sim.n_threads = 8    # number of threads in parallel
+
+sim.Lx = 1
+sim.Ly = 1
+# sim.Lz = 1  # only 3D, otherwise remove
+
+matter.sample_particles(sim, 0.01)  # sampling radius
+
+sim.add_plate(matter.ObjectPlate(0, matter.PlateType.bottom, matter.BC.NoSlip, 0.5))
+
+sim.rho = 1000              # density (kg/m3)
+sim.gravity = [0, -9.81]    # gravity
+
+sim.E = 1e6    # Young's modulus (Pa)
+sim.nu = 0.3   # Poisson's ratio (-)
+
+sim.plastic_model = matter.PlasticModel.DP  # Drucker-Prager yield
+sim.M = 0.5          # internal friction
+sim.q_cohesion = 0   # cohesion
+
+sim.simulate()
+```
+
+</details>
+
+In the `examples` folder, other examples will be archived (to use one of these examples, simply copy it into the `src` folder and rename it `mpm.cpp`). Python translations of these are in `python/examples/`.
 
 ### Objects and terrains
 
@@ -201,6 +253,10 @@ If forces are measured on objects, this will be saved as `force_<name-of-object>
 
 
 ### Key parameters and options
+
+<details>
+<summary><b>Click to expand: non-exhaustive list of parameters and options</b></summary>
+
 This is a non-exhaustive list of parameters and options (of the `Simulation` class) to be specified in the input file `mpm.cpp`. See `simulation.hpp` for the complete list, and take advantage of the current `mpm.cpp` example file. Other example files are found in the `examples` directory.
 
 | Parameter  | Default value  | Description  |
@@ -285,6 +341,7 @@ In the MCC-based models, one must also choose a corresponding hardening law:
 * exponential implicit law `HardeningLaw::ExpoImpl`     
 * hyperbolic sine implicit law `HardeningLaw::SinhImpl`     
 
+</details>
 
 ## Limitations
 
