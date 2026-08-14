@@ -128,8 +128,6 @@ The bindings build automatically as part of step 5 above, controlled by the CMak
 After building, the compiled module (`matter.cpython-*.so`) is placed in `build/python/`. Run any script with that directory on `PYTHONPATH`:  
 `PYTHONPATH=build/python python3 your_script.py`
 
-See the next section for a minimal example script. Full, runnable example scripts (Python translations of the C++ examples in the `examples` folder, including objects and energy-conservation checks) are in `python/examples/`. Tests for the bindings themselves live in `python/tests/`, runnable with `PYTHONPATH=build/python python3 -m pytest python/tests`, or alongside the C++ test suite via `ctest -R python_bindings_tests`.
-
 ### Example of setup file
 
 Here is a minimal setup for a simple granular collapse, shown both as a C++ setup file (`mpm.cpp`) and as the equivalent Python script (see [Python bindings](#python-bindings) above for how to build/run it).
@@ -219,7 +217,7 @@ sim.simulate()
 
 </details>
 
-In the `examples` folder, other examples will be archived (to use one of these examples, simply copy it into the `src` folder and rename it `mpm.cpp`). Python translations of these are in `python/examples/`.
+In the `examples` and `python/examples/` folder, other examples will be archived (if you are using C++, copy the example `.cpp` files into the `src` folder and rename it `mpm.cpp`).
 
 ### Objects and terrains
 
@@ -363,9 +361,14 @@ Please attribute this software by citing this article:
 
 * Blatny, L. & Gaume, J. (2025). Matter (v1): an open-source MPM solver for granular matter, _Geoscientific Model Development_, 18, 9149–9166. [DOI: 10.5194/gmd-18-9149-2025](https://doi.org/10.5194/gmd-18-9149-2025).
 
-If you use the $\mu(I)$-rheology models, please also cite this article: 
+If you use the $\mu(I)$-rheology models, please cite this article: 
 
 * Blatny, L., Gray, J.M.N.T., & Gaume, J. (2024). A critical state μ(I)-rheology model for cohesive granular flows. _Journal of Fluid Mechanics_, 997, A67. [DOI: 10.1017/jfm.2024.643](https://doi.org/10.1017/jfm.2024.643)    
+
+If you use the viscous models, please cite this article: 
+
+* Blatny, L. & Pellet, A. (2026). Modeling elasto-viscoplastic free-surface flows with different yield surfaces
+. _arXiv preprint_ arXiv:2607.17380. [DOI: 10.48550/arXiv.2607.17380](https://doi.org/10.48550/arXiv.2607.17380)
 
 If you use the sparse background grid feature (by setting `use_sparse=true`), please cite this article:
 
