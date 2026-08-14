@@ -63,3 +63,20 @@ endif (USE_VDB)
 
 target_compile_definitions(matter PRIVATE INCLUDE_DIR="${CMAKE_SOURCE_DIR}/levelsets")
 target_compile_definitions(matter PRIVATE SRC_DIR="${CMAKE_SOURCE_DIR}/src")
+
+# Wire the pytest suite for the bindings into ctest, alongside the C++ gtest suite.
+# Requires `pip install pytest numpy`.
+#
+# Deliberately reuse ${PYTHON_EXECUTABLE} - the interpreter pybind11_add_module()
+# itself resolved above (classic FindPythonInterp-style variable) - rather than
+# calling find_package(Python3 ...) again here. On a system with multiple Python
+# installations, the old and new CMake Python-finding modules can each pick a
+# *different* interpreter; running pytest with a mismatched one would fail to
+# import the compiled module (wrong ABI tag / SOABI), even though everything
+# built correctly.
+if (PYTHON_EXECUTABLE)
+    add_test(NAME python_bindings_tests
+             COMMAND ${PYTHON_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/tests -v)
+    set_tests_properties(python_bindings_tests PROPERTIES
+        ENVIRONMENT "PYTHONPATH=$<TARGET_FILE_DIR:matter>")
+endif()
