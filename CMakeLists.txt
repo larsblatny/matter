@@ -38,6 +38,9 @@ endif()
 option (USE_VDB "Use OpenVDB part of the code" ON)
 message(STATUS "Use of OpenVDB: ${USE_VDB}")
 
+option (BUILD_PYTHON_BINDINGS "Build pybind11 Python bindings for Simulation" ON)
+message(STATUS "Build Python bindings: ${BUILD_PYTHON_BINDINGS}")
+
 enable_testing()
 
 # Custom target to clean CMake cache (like make clean for cache)
@@ -48,6 +51,10 @@ add_custom_target(clean-cache
 
 add_subdirectory(src)
 add_subdirectory(tests)
+
+if (BUILD_PYTHON_BINDINGS)
+    add_subdirectory(python)
+endif()
 
 #### Download header files from external Github repos ####
 
