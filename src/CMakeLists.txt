@@ -28,24 +28,10 @@ if(ipo_supported)
     message(STATUS "IPO/LTO enabled for mpm")
 endif()
 
-# SPECIFIC RELEASE OPTIMIZATIONS (safer fast-math subset — preserves NaN/Inf detection)
-target_compile_options(mpm PRIVATE
-    $<$<CONFIG:Release>:-fno-math-errno>
-    $<$<CONFIG:Release>:-fno-trapping-math>
-    $<$<CONFIG:Release>:-fno-signed-zeros>
-    $<$<CONFIG:Release>:-fassociative-math>
-    $<$<CONFIG:Release>:-freciprocal-math>
-    $<$<CONFIG:Release>:-funroll-loops>
-    $<$<CONFIG:Release>:-fomit-frame-pointer>
-)
-
-# EIGEN-SPECIFIC OPTIMIZATIONS
-target_compile_definitions(mpm PRIVATE
-    EIGEN_NO_DEBUG                    # Disable debug checks in Eigen for speed
-    EIGEN_UNROLLING_LIMIT=256         # Unroll small fixed-size matrix loops (raised from 128)
-    EIGEN_FAST_MATH=1                 # Use fast math approximations where possible
-    EIGEN_VECTORIZE_FMA               # Enable fused multiply-add instructions
-)
+# Release-only fast-math flags and Eigen-specific optimizations (shared with the
+# matter Python module - see MATTER_RELEASE_FLAGS/MATTER_EIGEN_DEFS in the root CMakeLists.txt)
+target_compile_options(mpm PRIVATE ${MATTER_RELEASE_FLAGS})
+target_compile_definitions(mpm PRIVATE ${MATTER_EIGEN_DEFS})
 
 if (USE_VDB)
 

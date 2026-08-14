@@ -30,12 +30,16 @@ pybind11_add_module(matter
 
 target_link_libraries(matter PRIVATE OpenMP::OpenMP_CXX Eigen3::Eigen)
 
-target_compile_definitions(matter PRIVATE
-    EIGEN_NO_DEBUG
-    EIGEN_UNROLLING_LIMIT=256
-    EIGEN_FAST_MATH=1
-    EIGEN_VECTORIZE_FMA
-)
+# Same release-only fast-math flags, Eigen-specific optimizations, and LTO/IPO as
+# the mpm executable (see MATTER_RELEASE_FLAGS/MATTER_EIGEN_DEFS in the root
+# CMakeLists.txt), so simulation code compiles identically in both targets.
+target_compile_options(matter PRIVATE ${MATTER_RELEASE_FLAGS})
+target_compile_definitions(matter PRIVATE ${MATTER_EIGEN_DEFS})
+
+if(ipo_supported)
+    set_property(TARGET matter PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+    message(STATUS "IPO/LTO enabled for matter")
+endif()
 
 if (USE_VDB)
 
