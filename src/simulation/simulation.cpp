@@ -195,6 +195,8 @@ void Simulation::simulate(){
         advanceStep();
         if (exit == 1)
             return;
+        if (interrupt_check && interrupt_check())
+            return;
         time += dt;
         current_time_step++;
         if(frame_dt*(frame+1) - time < min_dt*1.1){

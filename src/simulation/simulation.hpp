@@ -12,6 +12,7 @@
 #include <vector>
 #include <chrono>
 #include <memory>
+#include <functional>
 
 #include "../tools.hpp"
 #include "../data_structures.hpp"
@@ -28,6 +29,8 @@ public:
   ~Simulation(){};
 
   int exit = 0;
+
+  std::function<bool()> interrupt_check = nullptr;
 
 #ifdef THREEDIM
   const unsigned int dim = 3;

@@ -372,7 +372,11 @@ PYBIND11_MODULE(matter, m) {
         .def("initialize", &Simulation::initialize,
              py::arg("save") = true, py::arg("dir") = "output/", py::arg("name") = "dummy")
         .def("simulate", [](Simulation& self) {
+            self.interrupt_check = []() { return PyErr_CheckSignals() != 0; };
             self.simulate();
+            self.interrupt_check = nullptr;
+            if (PyErr_Occurred())
+                throw py::error_already_set();
             if (self.exit != 0)
                 throw std::runtime_error("Simulation exited with an error (see console output above).");
         });
