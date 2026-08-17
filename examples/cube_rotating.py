@@ -1,10 +1,11 @@
 # Copyright (C) 2026 Lars Blatny. Released under GPL-3.0 license.
-#
-# Run this script (from the matter/ directory)
-#   PYTHONPATH=build/python python3 python/examples/cube_rotating.py
 
 import numpy as np
 import matter
+
+DIM = matter.Simulation().dim
+def vec(x=0.0, y=0.0, z=0.0):
+    return [x, y, z][:DIM]
 
 sim = matter.Simulation()
 
@@ -15,7 +16,7 @@ sim.reduce_verbose = True
 sim.end_frame = 20
 sim.fps = 1
 
-sim.gravity = [0, 0]
+sim.gravity = vec()
 
 sim.cfl = 0.5
 sim.flip_ratio = -1
@@ -23,6 +24,8 @@ sim.n_threads = 8
 
 sim.Lx = 1
 sim.Ly = 1
+if DIM == 3:
+    sim.Lz = 0.05
 matter.sample_particles(sim, 0.01)
 
 positions = sim.particles.get_positions()
@@ -31,7 +34,8 @@ positions[:, 1] -= 0.5 * sim.Ly
 
 vx = -1.0 * positions[:, 1] + 0.5
 vy = 1.0 * positions[:, 0] + 0.5
-velocities = np.column_stack([vx, vy])
+velocity_cols = [vx, vy] + ([np.zeros_like(vx)] if DIM == 3 else [])
+velocities = np.column_stack(velocity_cols)
 
 total_energy_init = 0.5 * np.sum(vx * vx + vy * vy)  # per unit mass
 

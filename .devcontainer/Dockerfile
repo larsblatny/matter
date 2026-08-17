@@ -14,7 +14,10 @@ RUN apt-get update && apt-get install -y \
     libtbb-dev \
     libboost-all-dev \
     libilmbase-dev \
-    libopenexr-dev 
+    libopenexr-dev \
+    python3-dev \
+    python3-pytest \
+    python3-numpy
 
 # Set working directory
 WORKDIR /workspace
