@@ -80,6 +80,11 @@ void Simulation::simulate(){
         return;
     }
 
+    if (use_mibf && use_basal_friction_field){
+        debug("use_mibf and use_basal_friction_field cannot both be true, please set one of them to false.");
+        return;
+    }
+
     if (dim == 3){
         debug("This is a 3D simulation.");
     }
