@@ -10,6 +10,7 @@
 
 #include "../src/tools.hpp"
 #include "../src/data_structures.hpp"
+#include "../src/basal_friction_field.hpp"
 #include "../src/simulation/simulation.hpp"
 #include "../src/sampling/sampling_particles.hpp"
 #include "../src/sampling/regular_sampling_particles.hpp"
@@ -50,6 +51,9 @@ static void fromArray(std::vector<TV>& vecs, const ParticleArray& arr) {
     for (size_t i = 0; i < vecs.size(); ++i)
         vecs[i] = arr.row(i);
 }
+
+// (nz, nx) row-major matrix used to pass gridded basal friction data from numpy.
+using GridArray = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
 PYBIND11_MODULE(matter, m) {
     m.doc() = "Python bindings for the matter MPM solver's Simulation class";
@@ -250,6 +254,40 @@ PYBIND11_MODULE(matter, m) {
         .def_readwrite("force_calc", &ObjectPlate::force_calc)
         .def_readwrite("force", &ObjectPlate::force);
 
+    // ---------------- BasalFrictionField ----------------
+    // y is vertical in this codebase, so the horizontal (terrain) plane is
+    // (x,z) in 3D; in 2D there is no z, so friction only varies along x.
+#ifdef THREEDIM
+    py::class_<BasalFrictionField>(m, "BasalFrictionField")
+        .def(py::init<>())
+        .def("set", [](BasalFrictionField& self, const GridArray& values, T x0, T z0, T d) {
+                 unsigned int nz = (unsigned int)values.rows();
+                 unsigned int nx = (unsigned int)values.cols();
+                 std::vector<T> flat(values.data(), values.data() + values.size());
+                 self.set(flat, nx, nz, x0, z0, d);
+             },
+             py::arg("values"), py::arg("x0"), py::arg("z0"), py::arg("d"),
+             "Set the basal friction grid from a (nz, nx) array, where values[k, i] is the "
+             "friction coefficient at (x0 + i*d, z0 + k*d). Bilinearly interpolated and "
+             "clamped to the grid bounds elsewhere.")
+        .def("interpolate", [](const BasalFrictionField& self, T x, T z) { return self.interpolate(x, z); },
+             py::arg("x"), py::arg("z"))
+        .def("is_set", &BasalFrictionField::isSet);
+#else
+    py::class_<BasalFrictionField>(m, "BasalFrictionField")
+        .def(py::init<>())
+        .def("set", [](BasalFrictionField& self, const std::vector<T>& values, T x0, T d) {
+                 self.set(values, (unsigned int)values.size(), x0, d);
+             },
+             py::arg("values"), py::arg("x0"), py::arg("d"),
+             "Set the basal friction line from a 1D array along x, where values[i] is the "
+             "friction coefficient at (x0 + i*d). Linearly interpolated and clamped to the "
+             "data bounds elsewhere.")
+        .def("interpolate", [](const BasalFrictionField& self, T x) { return self.interpolate(x); },
+             py::arg("x"))
+        .def("is_set", &BasalFrictionField::isSet);
+#endif
+
     // ---------------- Simulation ----------------
     py::class_<Simulation>(m, "Simulation")
         .def(py::init<>())
@@ -266,6 +304,8 @@ PYBIND11_MODULE(matter, m) {
         .def_readwrite("save_grid", &Simulation::save_grid)
         .def_readwrite("save_avg", &Simulation::save_avg)
         .def_readwrite("use_mibf", &Simulation::use_mibf)
+        .def_readwrite("use_basal_friction_field", &Simulation::use_basal_friction_field)
+        .def_readwrite("basal_friction_field", &Simulation::basal_friction_field)
         .def_readwrite("use_musl", &Simulation::use_musl)
         .def_readwrite("use_sparse", &Simulation::use_sparse)
         .def_readwrite("calculate_energy", &Simulation::calculate_energy)

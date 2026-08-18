@@ -224,6 +224,8 @@ void Simulation::saveGridData(std::string extra){
     int counter = 0;
     std::vector<TV> grid_x_save;
     grid_x_save.resize(grid_nodes);
+    std::vector<T> basal_friction_save;
+                                        
     for(int i = 0; i < Nx; i++){
         for(int j = 0; j < Ny; j++){
             #ifdef THREEDIM
@@ -293,6 +295,22 @@ void Simulation::saveGridData(std::string extra){
             type,
             grid.friction.size(),
             reinterpret_cast<uint8_t*>(grid.friction.data()),
+            tinyply::Type::INVALID,
+            0);
+    }
+
+    if (use_basal_friction_field){
+        basal_friction_save.resize(grid_nodes);
+        for(int i = 0; i < grid_nodes; i++){
+            basal_friction_save[i] = basal_friction_field.interpolate(grid_x_save[i]);
+        }
+
+        file.add_properties_to_element(
+            "vertex",
+            { "basal_friction" },
+            type,
+            basal_friction_save.size(),
+            reinterpret_cast<uint8_t*>(basal_friction_save.data()),
             tinyply::Type::INVALID,
             0);
     }
