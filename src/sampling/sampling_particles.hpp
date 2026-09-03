@@ -166,8 +166,8 @@
 
         debug("    dx set to ", sim.dx);
 
-        TV dmin;
-        TV dmax;
+        TV dmin = origins[0];
+        TV dmax = origins[0] + sizes[0];
 
         for (int i = 1; i < origins.size(); ++i) {
 
@@ -238,14 +238,14 @@
 
         debug("    dx set to ", sim.dx);
 
-        TV dmin;
-        TV dmax;
+        TV dmin = origins[0];
+        TV dmax = origins[0] + sizes[0];
 
-        for (int i = 0; i < origins.size(); ++i) {
+        for (int i = 1; i < origins.size(); ++i) {
             dmin = dmin.cwiseMin(origins[i]);
             dmax = dmax.cwiseMax(origins[i] + sizes[i]);
         }
-        
+
         sim.Lx = dmax(0) - dmin(0);
         sim.Ly = dmax(1) - dmin(1);
 

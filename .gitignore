@@ -3,3 +3,6 @@ build/
 postprocess/backup/
 *.vscode/
 deps/
+.pytest_cache/
+__pycache__/
+*.pyc

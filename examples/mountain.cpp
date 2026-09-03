@@ -37,13 +37,13 @@ int main(){
     sim.gravity[1] = -9.81 * std::cos(theta);
 
     ////// INITIAL PARTICLE POSITIONS    
-    std::string release_path = std::string("../levelsets/mountain_release_shifted.vdb");
+    std::string release_path = std::string("../levelsets/mountain_release.vdb");
     ObjectVdb release = ObjectVdb(release_path);
-    sampleParticlesFromVdb(sim, release, 0.18); // h = 0.431492478463 m
-    // sampleParticlesFromVdb(sim, release, 0.1668627); // h = 0.400046583858 m
+    sampleParticlesFromVdb(sim, release, 0.18);             // h = 0.431492478463 m
+    // sampleParticlesFromVdb(sim, release, 0.1668627);     // h = 0.400046583858 m
     // sampleParticlesFromVdb(sim, release, 0.06663595279); // h = 0.159996934438 m
 
-    std::string terrain_path = std::string("../levelsets/mountain_terrain_shifted.vdb");
+    std::string terrain_path = std::string("../levelsets/mountain_terrain_20mb.vdb");
     std::string name;
     name = "Terrain"; 
     sim.objects.push_back(std::make_unique<ObjectVdb>(terrain_path, BC::SlipFree, 0.35, name));

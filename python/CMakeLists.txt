@@ -1,0 +1,86 @@
+# Copyright (C) 2026 Lars Blatny. Released under GPL-3.0 license.
+
+include(FetchContent)
+FetchContent_Declare(
+  pybind11
+  URL https://github.com/pybind/pybind11/archive/refs/tags/v2.13.6.tar.gz
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+FetchContent_MakeAvailable(pybind11)
+
+find_package(Eigen3 REQUIRED NO_MODULE)
+find_package(OpenMP REQUIRED)
+
+pybind11_add_module(matter
+               bindings.cpp
+               ../src/simulation/simulation.cpp
+               ../src/simulation/save_data.cpp
+               ../src/simulation/remesh.cpp
+               ../src/simulation/deformation_update.cpp
+               ../src/simulation/plasticity.cpp
+               ../src/simulation/p2g.cpp
+               ../src/simulation/g2p.cpp
+               ../src/simulation/explicit_euler_update.cpp
+               ../src/simulation/boundary_collision.cpp
+               ../src/simulation/update_dt.cpp
+               ../src/simulation/position_update.cpp
+               ../src/simulation/musl.cpp
+               ../src/simulation/pbc.cpp
+               )
+
+target_link_libraries(matter PRIVATE OpenMP::OpenMP_CXX Eigen3::Eigen)
+
+# Same release-only fast-math flags, Eigen-specific optimizations, and LTO/IPO as
+# the mpm executable (see MATTER_RELEASE_FLAGS/MATTER_EIGEN_DEFS in the root
+# CMakeLists.txt), so simulation code compiles identically in both targets.
+target_compile_options(matter PRIVATE ${MATTER_RELEASE_FLAGS})
+target_compile_definitions(matter PRIVATE ${MATTER_EIGEN_DEFS})
+
+if(ipo_supported)
+    set_property(TARGET matter PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+    message(STATUS "IPO/LTO enabled for matter")
+endif()
+
+if (USE_VDB)
+
+    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+
+    find_package(OpenVDB 3.1 QUIET)
+    include_directories(${OPENVDB_INCLUDE_DIRS} SYSTEM)
+
+    find_package(TBB REQUIRED)
+    include_directories(${TBB_INCLUDE_DIRS} SYSTEM)
+
+    find_package(Boost REQUIRED)
+    include_directories(${Boost_INCLUDE_DIRS} SYSTEM)
+
+    target_compile_definitions(matter PRIVATE USE_VDB)
+
+    target_link_libraries(matter PRIVATE
+                        ${OPENVDB_LIBRARIES}
+                        ${OpenEXR_LIBRARIES}
+                        ${TBB_LIBRARIES}
+                        ${Boost_LIBRARIES}
+                    )
+
+endif (USE_VDB)
+
+target_compile_definitions(matter PRIVATE INCLUDE_DIR="${CMAKE_SOURCE_DIR}/levelsets")
+target_compile_definitions(matter PRIVATE SRC_DIR="${CMAKE_SOURCE_DIR}/src")
+
+# Wire the pytest suite for the bindings into ctest, alongside the C++ gtest suite.
+# Requires `pip install pytest numpy`.
+#
+# Deliberately reuse ${PYTHON_EXECUTABLE} - the interpreter pybind11_add_module()
+# itself resolved above (classic FindPythonInterp-style variable) - rather than
+# calling find_package(Python3 ...) again here. On a system with multiple Python
+# installations, the old and new CMake Python-finding modules can each pick a
+# *different* interpreter; running pytest with a mismatched one would fail to
+# import the compiled module (wrong ABI tag / SOABI), even though everything
+# built correctly.
+if (PYTHON_EXECUTABLE)
+    add_test(NAME python_bindings_tests
+             COMMAND ${PYTHON_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/tests -v)
+    set_tests_properties(python_bindings_tests PROPERTIES
+        ENVIRONMENT "PYTHONPATH=$<TARGET_FILE_DIR:matter>")
+endif()

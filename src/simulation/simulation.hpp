@@ -12,11 +12,13 @@
 #include <vector>
 #include <chrono>
 #include <memory>
+#include <functional>
 
 #include "../tools.hpp"
 #include "../data_structures.hpp"
 #include "../block_scan_grid.hpp"
 #include "../timer.hpp"
+#include "../basal_friction_field.hpp"
 
 #include "../objects/object_general.hpp"
 #include "../objects/object_plate.hpp"
@@ -28,6 +30,8 @@ public:
   ~Simulation(){};
 
   int exit = 0;
+
+  std::function<bool()> interrupt_check = nullptr;
 
 #ifdef THREEDIM
   const unsigned int dim = 3;
@@ -47,6 +51,7 @@ public:
   bool save_grid = false;
   bool save_avg = false;
   bool use_mibf = false;
+  bool use_basal_friction_field = false; // use basal_friction_field instead of obj->friction
   bool use_musl = false;
   bool use_sparse = false;
   bool calculate_energy = false;
@@ -117,6 +122,9 @@ public:
   // Objects
   std::vector<std::unique_ptr<ObjectPlate>> plates;
   std::vector<std::unique_ptr<ObjectGeneral>> objects;
+
+  // Terrain data, used if use_basal_friction_field is true
+  BasalFrictionField basal_friction_field;
 
   // Sampling index to account for multiple objects or boxes
   std::vector<int> sampling_start_idx;

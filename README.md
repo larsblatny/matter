@@ -71,6 +71,8 @@ With _Matter_, you can simulate granular flow on various simple and complex terr
 
 * Initial particle positions can be sampled using the **Poisson disk sampling** scheme by R. Bridson, ACM SIGGRAPH 2007, here based on the implementation by [Tommy Hinks](https://github.com/thinks/poisson-disk-sampling)
 
+* Python interface using [pybind11](https://github.com/pybind/pybind11)   
+
 
 ## Get started
 
@@ -78,26 +80,32 @@ With _Matter_, you can simulate granular flow on various simple and complex terr
 
 The required non-header-only dependencies are **[CMake](https://cmake.org/)**, **[OpenMP](https://www.openmp.org/)**. The standard C++ linear algebra template library **[Eigen](https://eigen.tuxfamily.org/)** is required. **[OpenVDB](https://www.openvdb.org/)** is optional, however, needed if vdb-files are used as input (either as terrain/objects or as particle sampling domain). 
 
-##### Linux
+<details>
+<summary><b>Linux</b></summary>
+
 Install all the above dependencies with this simple command:        
 `sudo apt-get install -y cmake libeigen3-dev libopenvdb-dev libtbb-dev libboost-all-dev libilmbase-dev libopenexr-dev`    
 where only `cmake` and `libeigen3-dev` are strictly required. 
+</details>
 
-##### MacOS
+<details>
+<summary><b>MacOS</b></summary>
+
 You can download/install the required dependencies with [Homebrew](https://brew.sh/) through   
 `brew install cmake eigen libomp openvdb`    
 although OpenVDB may require other dependecies, see https://formulae.brew.sh/formula/openvdb. 
+</details>
     
 
-However, if not using Linux, we recommend instead using [VSCode Dev Containers](https://code.visualstudio.com/docs/devcontainers/tutorial). 
+We recommend in any case using [VSCode Dev Containers](https://code.visualstudio.com/docs/devcontainers/tutorial). 
 Download [VSCode](https://code.visualstudio.com/) and [Docker](https://www.docker.com/products/docker-desktop/). In VSCode, install the "Dev Containers" extension. When you open the Matter repository in VSCode, you will be asked if you want to run it in a container. When you accept, a container will be set up and you are ready to simulate!
 
 
 ### Build and run the code
 
-1. Set up your simulation parameters and initial state in `mpm.cpp`.  In `tools.hpp`, the user can specify the dimension of the simulation (default: 2D) and order of interpolation (default: quadratic). 
+1. Specify the dimension of the simulation (default: 2D) and order of interpolation (default: quadratic) in `src/tools.hpp`
 
-2. Create a build directory:     
+2. From the top-level `matter/`, create a build directory:     
    `mkdir build`
 
 3. Enter the build directory:    
@@ -105,23 +113,30 @@ Download [VSCode](https://code.visualstudio.com/) and [Docker](https://www.docke
    
 4. Specify CMake options. Use default options (release mode and use OpenVDB):     
    `cmake ..`     
-   or optionally specify     
+   or optionally specify particular build-types, e.g., debug mode and without OpenVDB    
    `cmake -DCMAKE_BUILD_TYPE=Debug -DUSE_VDB=OFF ..`       
 
 5. Compile (NB: the number of threads for the _simulation_ is specified in `mpm.cpp`)      
    `make -j <number of cores for compilation>` 
 
-6. Run the sim you set up in `mpm.cpp`:      
-   `./src/mpm`
+6. Run the simulation:       
+   * If using C++ interface: Run the sim you set up in `mpm.cpp`:      
+   `./src/mpm`     
+   * If using Python interface: Run the sim in any python file:     
+   `PYTHONPATH=<path_to_matter>/build/python python3 my_script.py`
 
 7. [Optional] Tests:       
    Run all tests with `make test` or `ctest`. Run single test with `ctest -R <name of test>`
  
 You can "clean" using `make clean` and `make clean-cache`, e.g., if you want to change CMake options.
 
+
 ### Example of setup file
 
-Here is a minimal setup file `mpm.cpp` for a simple granular collapse.    
+Here is a minimal setup for a simple granular collapse, shown both as a C++ setup file (`mpm.cpp`) and as the equivalent Python script (see [Python bindings](#python-bindings) above for how to build/run it).
+
+<details>
+<summary><b>C++ (<code>mpm.cpp</code>)</b></summary>
 
 ```cpp
 #include "tools.hpp"
@@ -167,7 +182,45 @@ int main(){
 }
 ```
 
-In the `examples` folder, other examples will be archived (to use one of these examples, simply copy it into the `src` folder and rename it `mpm.cpp`).
+</details>
+
+<details>
+<summary><b>Python</b></summary>
+
+```python
+import matter
+
+sim = matter.Simulation()
+sim.initialize(True, "output/", "collapse")
+
+sim.end_frame = 20  # last frame to simulate
+sim.fps = 10         # frames per second
+sim.n_threads = 8    # number of threads in parallel
+
+sim.Lx = 1
+sim.Ly = 1
+# sim.Lz = 1  # only 3D, otherwise remove
+
+matter.sample_particles(sim, 0.01)  # sampling radius
+
+sim.add_plate(matter.ObjectPlate(0, matter.PlateType.bottom, matter.BC.NoSlip, 0.5))
+
+sim.rho = 1000              # density (kg/m3)
+sim.gravity = [0, -9.81]    # gravity
+
+sim.E = 1e6    # Young's modulus (Pa)
+sim.nu = 0.3   # Poisson's ratio (-)
+
+sim.plastic_model = matter.PlasticModel.DP  # Drucker-Prager yield
+sim.M = 0.5          # internal friction
+sim.q_cohesion = 0   # cohesion
+
+sim.simulate()
+```
+
+</details>
+
+In the `examples` and `python/examples/` folder, other examples will be archived (if you are using C++, copy the example `.cpp` files into the `src` folder and rename it `mpm.cpp`).
 
 ### Objects and terrains
 
@@ -177,12 +230,15 @@ Rigid objects and terrains (boundaries) are either
 
 The objects already available can be found in the `objects` directory. The forces acting on these objects can be measured by setting their parameter `force_calc = true`, see the example `collapse.cpp`. Be aware that if the force measurement is turned on for an object which is contantly in collision with a large part of the material, this may slightly slow down the simulation.
 
-##### Analytical objects
+<details>
+<summary><b>Analytical objects</b></summary>
 Analytical objects can be specified as a derived class from the general `ObjectGeneral` class. An example of this is `ObjectBump` which provides the terrain of a smooth bump used in the flow experiments in [Viroulet et al. (2017)](https://doi.org/10.1017/jfm.2017.41). For the very common case of an axis-aligned plate, an `ObjectPlate` class has been made separate from `ObjectGeneral` class for efficiency and convenience. In `ObjectPlate`, you can also assign a speed to the plate, as well as controls on the time-evolution of the speed. Any plate must either a `PlateType::top`, `PlateType::bottom`, `PlateType::front`, `PlateType::back`, `PlateType::left` or `PlateType::right`. 
-
-##### OpenVDB objects
+</details>
+<details>
+<summary><b>OpenVDB objects</b></summary>
 A terrain/object from a `.vdb` is stored in an instance of the `ObjectVdb` class which is derived from `ObjectGeneral`.
 Examples of `.vdb`-files are found in the folder `levelsets`.
+</details>
 
 Multiple objects in a simulation are possible. Note that all `ObjectGeneral` instances must be added to the vector `objects` and `ObjectPlate` instances are added to the vector `plates`. 
 
@@ -200,7 +256,11 @@ PLY files can also be easily read by Python. This is shown in the file `load_ply
 If forces are measured on objects, this will be saved as `force_<name-of-object>.csv` where each line contains (time, Fx, Fy(, Fz)) for each frame.
 
 
-### Key parameters and options
+### Key parameters and models
+
+<details>
+<summary><b>Click to expand: Main parameters and options</b></summary>
+
 This is a non-exhaustive list of parameters and options (of the `Simulation` class) to be specified in the input file `mpm.cpp`. See `simulation.hpp` for the complete list, and take advantage of the current `mpm.cpp` example file. Other example files are found in the `examples` directory.
 
 | Parameter  | Default value  | Description  |
@@ -227,8 +287,10 @@ This is a non-exhaustive list of parameters and options (of the `Simulation` cla
 | `nu`                   | 0.3            | The 3D Poisson's ratio (-)
 | `q_prefac` | sqrt(1/2) | Prefactor used in definition of q, default is q = sqrt(1/2 s:s). 
 
+</details>
 
-Here is a list of the various plastic models and their parameters:
+<details>
+<summary><b>Click to expand: Constitutive plastic models</b></summary>
 
 | Model                                | Name                  | Parameters                | Default value   |
 |  ----                                | ----     |    ----      |          ---    |
@@ -285,6 +347,7 @@ In the MCC-based models, one must also choose a corresponding hardening law:
 * exponential implicit law `HardeningLaw::ExpoImpl`     
 * hyperbolic sine implicit law `HardeningLaw::SinhImpl`     
 
+</details>
 
 ## Limitations
 
@@ -306,9 +369,14 @@ Please attribute this software by citing this article:
 
 * Blatny, L. & Gaume, J. (2025). Matter (v1): an open-source MPM solver for granular matter, _Geoscientific Model Development_, 18, 9149–9166. [DOI: 10.5194/gmd-18-9149-2025](https://doi.org/10.5194/gmd-18-9149-2025).
 
-If you use the $\mu(I)$-rheology models, please also cite this article: 
+If you use the $\mu(I)$-rheology models, please cite this article: 
 
 * Blatny, L., Gray, J.M.N.T., & Gaume, J. (2024). A critical state μ(I)-rheology model for cohesive granular flows. _Journal of Fluid Mechanics_, 997, A67. [DOI: 10.1017/jfm.2024.643](https://doi.org/10.1017/jfm.2024.643)    
+
+If you use the viscous models, please cite this article: 
+
+* Blatny, L. & Pellet, A. (2026). Modeling elasto-viscoplastic free-surface flows with different yield surfaces
+. _arXiv preprint_ arXiv:2607.17380. [DOI: 10.48550/arXiv.2607.17380](https://doi.org/10.48550/arXiv.2607.17380)
 
 If you use the sparse background grid feature (by setting `use_sparse=true`), please cite this article:
 

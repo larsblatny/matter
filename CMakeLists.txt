@@ -27,7 +27,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     endif()
 endif()
 
-# Check LTO/IPO support — result used by src/CMakeLists.txt to enable it on the mpm target only
+# Check LTO/IPO support — result used below to enable it on both the mpm executable
+# and the matter Python module
 include(CheckIPOSupported)
 check_ipo_supported(RESULT ipo_supported OUTPUT ipo_output)
 if(NOT ipo_supported)
@@ -35,8 +36,31 @@ if(NOT ipo_supported)
 endif()
 # =================================================
 
+# Compile settings shared between the mpm executable (src/) and the matter Python
+# module (python/), so simulation code is compiled identically either way — single
+# source of truth, referenced by both src/CMakeLists.txt and python/CMakeLists.txt.
+set(MATTER_EIGEN_DEFS
+    EIGEN_NO_DEBUG                    # Disable debug checks in Eigen for speed
+    EIGEN_UNROLLING_LIMIT=256         # Unroll small fixed-size matrix loops (raised from 128)
+    EIGEN_FAST_MATH=1                 # Use fast math approximations where possible
+    EIGEN_VECTORIZE_FMA               # Enable fused multiply-add instructions
+)
+set(MATTER_RELEASE_FLAGS
+    # SPECIFIC RELEASE OPTIMIZATIONS (safer fast-math subset — preserves NaN/Inf detection)
+    $<$<CONFIG:Release>:-fno-math-errno>
+    $<$<CONFIG:Release>:-fno-trapping-math>
+    $<$<CONFIG:Release>:-fno-signed-zeros>
+    $<$<CONFIG:Release>:-fassociative-math>
+    $<$<CONFIG:Release>:-freciprocal-math>
+    $<$<CONFIG:Release>:-funroll-loops>
+    $<$<CONFIG:Release>:-fomit-frame-pointer>
+)
+
 option (USE_VDB "Use OpenVDB part of the code" ON)
 message(STATUS "Use of OpenVDB: ${USE_VDB}")
+
+option (BUILD_PYTHON_BINDINGS "Build pybind11 Python bindings for Simulation" ON)
+message(STATUS "Build Python bindings: ${BUILD_PYTHON_BINDINGS}")
 
 enable_testing()
 
@@ -48,6 +72,10 @@ add_custom_target(clean-cache
 
 add_subdirectory(src)
 add_subdirectory(tests)
+
+if (BUILD_PYTHON_BINDINGS)
+    add_subdirectory(python)
+endif()
 
 #### Download header files from external Github repos ####
 

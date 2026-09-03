@@ -124,6 +124,9 @@ TEST(CoulombFrictionTest, PlateSlipFree) {
 
     sim.Lx = 0.1;
     sim.Ly = 0.05;
+    #ifdef THREEDIM
+        sim.Lz = 0.05;
+    #endif
     T k_rad = 0.005;
     sampleParticles(sim, k_rad);
     for(int p = 0; p < sim.Np; p++){
@@ -175,6 +178,9 @@ TEST(CoulombFrictionTest, PlateSlipStick) {
 
     sim.Lx = 0.1;
     sim.Ly = 0.05;
+    #ifdef THREEDIM
+        sim.Lz = 0.05;
+    #endif
     T k_rad = 0.005;
     sampleParticles(sim, k_rad);
     for(int p = 0; p < sim.Np; p++){
@@ -226,6 +232,9 @@ TEST(CoulombFrictionTest, GeneralSlipFree) {
 
     sim.Lx = 0.1;
     sim.Ly = 0.05;
+    #ifdef THREEDIM
+        sim.Lz = 0.05;
+    #endif
     T k_rad = 0.005;
     sampleParticles(sim, k_rad);
     for(int p = 0; p < sim.Np; p++){
@@ -277,6 +286,9 @@ TEST(CoulombFrictionTest, GeneralSlipStick) {
 
     sim.Lx = 0.1;
     sim.Ly = 0.05;
+    #ifdef THREEDIM
+        sim.Lz = 0.05;
+    #endif
     T k_rad = 0.005;
     sampleParticles(sim, k_rad);
     for(int p = 0; p < sim.Np; p++){

@@ -28,6 +28,8 @@ void Simulation::boundaryCollision(T mi, int index, TV Xi, TV& vi){
                     T friction = obj->friction;
                     if (use_mibf)
                         friction = grid.friction[index];
+                    if (use_basal_friction_field)
+                        friction = basal_friction_field.interpolate(Xi);
 
                     TV v_tang = v_rel - dot * n;
                     if (friction > 0){
@@ -53,6 +55,8 @@ void Simulation::boundaryCollision(T mi, int index, TV Xi, TV& vi){
                     T friction = obj->friction;
                     if (use_mibf)
                         friction = grid.friction[index];
+                    if (use_basal_friction_field)
+                        friction = basal_friction_field.interpolate(Xi);
 
                     if (friction > 0){
                         if( -dot * friction < v_rel.norm() )
@@ -107,6 +111,8 @@ void Simulation::boundaryCollision(T mi, int index, TV Xi, TV& vi){
                 T friction = obj->friction;
                     if (use_mibf)
                         friction = grid.friction[index];
+                    if (use_basal_friction_field)
+                        friction = basal_friction_field.interpolate(Xi);
 
                 if (obj->plate_type == PlateType::top || obj->plate_type == PlateType::bottom){
                     // tangential velocity is the (x,z) components
@@ -183,6 +189,8 @@ void Simulation::boundaryCollision(T mi, int index, TV Xi, TV& vi){
                 T friction = obj->friction;
                     if (use_mibf)
                         friction = grid.friction[index];
+                    if (use_basal_friction_field)
+                        friction = basal_friction_field.interpolate(Xi);
 
                 if ((obj->plate_type == PlateType::top && vy_rel > 0) || (obj->plate_type == PlateType::bottom && vy_rel < 0)){
                     // tangential velocity is the (x,z) components
@@ -295,6 +303,8 @@ void Simulation::boundaryCollision(T mi, int index, TV Xi, TV& vi){
                 T friction = obj->friction;
                     if (use_mibf)
                         friction = grid.friction[index];
+                    if (use_basal_friction_field)
+                        friction = basal_friction_field.interpolate(Xi);
 
                 if (obj->plate_type == PlateType::top || obj->plate_type == PlateType::bottom){
                     // tangential velocity is the (x) component and must be changed
@@ -345,6 +355,8 @@ void Simulation::boundaryCollision(T mi, int index, TV Xi, TV& vi){
                 T friction = obj->friction;
                     if (use_mibf)
                         friction = grid.friction[index];
+                    if (use_basal_friction_field)
+                        friction = basal_friction_field.interpolate(Xi);
 
                 if ((obj->plate_type == PlateType::top && vy_rel > 0) || (obj->plate_type == PlateType::bottom && vy_rel < 0)){
                     // tangential velocity is the (x) component and must be changed

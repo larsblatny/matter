@@ -162,7 +162,7 @@ void regularSampleParticles(S& sim, std::vector<TV> origins, std::vector<TV> siz
     #ifdef THREEDIM
         const T pSpacing = sim.dx / std::cbrt(ppc);
         for (int i = 0; i < origins.size(); ++i) {
-            
+
             const T Lx0 = origins[i](0);
             const T Ly0 = origins[i](1);
             const T Lz0 = origins[i](2);
@@ -170,8 +170,6 @@ void regularSampleParticles(S& sim, std::vector<TV> origins, std::vector<TV> siz
             const int nx = int(sizes[i](0) / pSpacing);
             const int ny = int(sizes[i](1) / pSpacing);
             const int nz = int(sizes[i](2) / pSpacing);
-
-            sim.sampling_start_idx.push_back(samples.size());
 
             for (int j = 0; j < nx; ++j)
                 for (int k = 0; k < ny; ++k)
@@ -195,16 +193,12 @@ void regularSampleParticles(S& sim, std::vector<TV> origins, std::vector<TV> siz
     #else
         const T pSpacing = sim.dx / std::sqrt(ppc);
 
-        sim.sampling_start_idx.push_back(0);
-
         for (int i = 0; i < origins.size(); ++i) {
 
             const T Lx0 = origins[i](0);
             const T Ly0 = origins[i](1);
             const int nx = int(sizes[i](0) / pSpacing);
             const int ny = int(sizes[i](1) / pSpacing);
-
-            sim.sampling_start_idx.push_back(samples.size());
 
             for (int j = 0; j < nx; ++j)
                 for (int k = 0; k < ny; ++k)
@@ -217,7 +211,7 @@ void regularSampleParticles(S& sim, std::vector<TV> origins, std::vector<TV> siz
                 }
 
             sim.sampling_start_idx.push_back(samples.size());
-            debug("    box ", i, ": ", sim.sampling_start_idx[i] - sim.sampling_start_idx[i], " particles");
+            debug("    box ", i, ": ", sim.sampling_start_idx[i + 1] - sim.sampling_start_idx[i], " particles");
 
         }
 
