@@ -232,12 +232,17 @@ The objects already available can be found in the `objects` directory. The force
 
 <details>
 <summary><b>Analytical objects</b></summary>
+
 Analytical objects can be specified as a derived class from the general `ObjectGeneral` class. An example of this is `ObjectBump` which provides the terrain of a smooth bump used in the flow experiments in [Viroulet et al. (2017)](https://doi.org/10.1017/jfm.2017.41). For the very common case of an axis-aligned plate, an `ObjectPlate` class has been made separate from `ObjectGeneral` class for efficiency and convenience. In `ObjectPlate`, you can also assign a speed to the plate, as well as controls on the time-evolution of the speed. Any plate must either a `PlateType::top`, `PlateType::bottom`, `PlateType::front`, `PlateType::back`, `PlateType::left` or `PlateType::right`. 
+
 </details>
+
 <details>
 <summary><b>OpenVDB objects</b></summary>
+
 A terrain/object from a `.vdb` is stored in an instance of the `ObjectVdb` class which is derived from `ObjectGeneral`.
 Examples of `.vdb`-files are found in the folder `levelsets`.
+
 </details>
 
 Multiple objects in a simulation are possible. Note that all `ObjectGeneral` instances must be added to the vector `objects` and `ObjectPlate` instances are added to the vector `plates`. 
