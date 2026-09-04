@@ -14,7 +14,9 @@ Simulation::Simulation(){
     runtime_g2p = 0;
     runtime_euler = 0;
     runtime_defgrad = 0;
-    runtime_total = 0;    
+    runtime_total = 0;
+
+    setup_file = std::string(SRC_DIR) + "/mpm.cpp"; // overwritten by Python
 }
 
 
@@ -54,8 +56,21 @@ void Simulation::createDirectory(){
     else
         std::cout << "Simulation " << sim_name << " was created now" << std::endl;
 
-    std::string file_in  = std::string(SRC_DIR) + "/mpm.cpp";
-    std::string file_out = directory + sim_name + "/initial_setup.cpp";
+    if (setup_file.empty()){ // e.g. an interactive Python session, no script to copy
+        std::cout << "No setup file to copy" << std::endl;
+        return;
+    }
+
+    std::string file_in = setup_file;
+
+    // Keep the extension of the input file, so a Python run gets initial_setup.py
+    std::string extension = "";
+    size_t dot   = file_in.find_last_of('.');
+    size_t slash = file_in.find_last_of("/\\");
+    if (dot != std::string::npos && (slash == std::string::npos || dot > slash))
+        extension = file_in.substr(dot);
+
+    std::string file_out = directory + sim_name + "/initial_setup" + extension;
 
     std::ifstream in(file_in, std::ios::binary);
     std::ofstream out(file_out, std::ios::binary);
