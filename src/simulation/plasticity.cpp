@@ -9,6 +9,8 @@
 
 void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & Fe_trial){
 
+    particles.delta_gamma[p] = 0; // overwritten below only if this particle yields
+
     if (plastic_model == PlasticModel::NoPlasticity){
 
         Eigen::JacobiSVD<TM> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
@@ -146,7 +148,6 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             if ((p_trial+p_shift) > p_tip && q_trial <= q_yield) {
                 if (use_pradhana)
                     particles.eps_pl_vol_pradhana[p] = 0; // reset correction as no longer dilating
-                particles.delta_gamma[p] = 0; // elastic particles have no delta_gamma
             }
 
             // right of tip AND outside yield surface
@@ -342,7 +343,6 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             else{ // if right of shifted tip (incl elastic states)
                 if (use_pradhana)
                     particles.eps_pl_vol_pradhana[p] = 0; // reset pradhana volume accumulation
-                particles.delta_gamma[p] = 0; // for the elastic particles, the plastic particles have their delta_gamma overwritten in the next if-statement
             }
 
             // right of shifted tip AND outside the shifted yield surface
