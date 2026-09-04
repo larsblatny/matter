@@ -85,6 +85,11 @@ void Simulation::simulate(){
         return;
     }
 
+    if (use_basal_friction_field && !basal_friction_field.isSet()){
+        debug("use_basal_friction_field is true but no friction field has been set.");
+        return;
+    }
+
     if (dim == 3){
         debug("This is a 3D simulation.");
     }
