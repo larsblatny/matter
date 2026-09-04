@@ -42,6 +42,8 @@ public:
   unsigned int n_threads = 1; // number of OMP threads
   unsigned int end_frame = 1; // last frame in the simulation
 
+  std::string setup_file; // an empty string means no file is copied.
+
   bool is_initialized = false;
   bool save_sim = true;
   bool reduce_verbose = false;

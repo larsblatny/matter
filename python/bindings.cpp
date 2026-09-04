@@ -295,6 +295,7 @@ PYBIND11_MODULE(matter, m) {
         .def_readwrite("exit", &Simulation::exit)
         .def_readwrite("n_threads", &Simulation::n_threads)
         .def_readwrite("end_frame", &Simulation::end_frame)
+        .def_readwrite("setup_file", &Simulation::setup_file)
         .def_readwrite("is_initialized", &Simulation::is_initialized)
         .def_readwrite("save_sim", &Simulation::save_sim)
         .def_readwrite("reduce_verbose", &Simulation::reduce_verbose)
@@ -411,8 +412,26 @@ PYBIND11_MODULE(matter, m) {
                 out.push_back(o.get());
             return out;
         }, py::return_value_policy::reference_internal)
-        .def("initialize", &Simulation::initialize,
-             py::arg("save") = true, py::arg("dir") = "output/", py::arg("name") = "dummy")
+        .def("initialize", [](Simulation& self, bool save, std::string dir, std::string name) {
+            // Record the calling Python script, so the output folder gets a copy of it
+            // as initial_setup.py rather than a copy of the C++ driver mpm.cpp.
+            // Skipped if the caller already chose a setup_file explicitly.
+            if (self.setup_file != std::string(SRC_DIR) + "/mpm.cpp") {
+                self.initialize(save, dir, name);
+                return;
+            }
+            self.setup_file = "";
+            try {
+                py::object main = py::module_::import("__main__");
+                if (py::hasattr(main, "__file__")) {
+                    py::object abspath = py::module_::import("os").attr("path").attr("abspath");
+                    self.setup_file = py::cast<std::string>(abspath(main.attr("__file__")));
+                }
+            } catch (const py::error_already_set&) {
+                self.setup_file = ""; // interactive session: nothing to copy
+            }
+            self.initialize(save, dir, name);
+        }, py::arg("save") = true, py::arg("dir") = "output/", py::arg("name") = "dummy")
         .def("simulate", [](Simulation& self) {
             self.interrupt_check = []() { return PyErr_CheckSignals() != 0; };
             self.simulate();

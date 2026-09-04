@@ -10,7 +10,6 @@ void Simulation::deformationUpdate(){
         debug("deformationUpdate");
     #endif
 
-    std::fill( particles.delta_gamma.begin(), particles.delta_gamma.end(), 0.0 );
     unsigned int plastic_count = 0;
 
     #pragma omp parallel for reduction(+:plastic_count) num_threads(n_threads)

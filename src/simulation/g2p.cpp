@@ -16,7 +16,7 @@ void Simulation::G2P(){
     std::fill( particles.flip.begin(), particles.flip.end(), TV::Zero() );
     std::fill( particles.Bmat.begin(), particles.Bmat.end(), TM::Zero() );
 
-    #pragma omp parallel num_threads(n_threads)
+    #pragma omp parallel num_threads(n_threads) reduction(+:plastic_count)
     {
 
         #pragma omp for nowait
@@ -126,7 +126,7 @@ void Simulation::G2PSparseScan() {
     std::vector<int> tmaxy(n_threads, -INT32_MAX);
     std::vector<int> tmaxz(n_threads, -INT32_MAX);
 
-    #pragma omp parallel num_threads(n_threads)
+    #pragma omp parallel num_threads(n_threads) reduction(+:plastic_count)
     {
         int tid = omp_get_thread_num();
         int lminx = INT32_MAX;

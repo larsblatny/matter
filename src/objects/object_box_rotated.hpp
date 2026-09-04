@@ -25,6 +25,9 @@ public:
         TV local_d;
         local_d[0] =  ct * d[0] + st * d[1];
         local_d[1] = -st * d[0] + ct * d[1];
+#ifdef THREEDIM
+        local_d[2] = d[2];
+#endif
 
         TV h = (T)0.5 * L;
 
@@ -45,6 +48,9 @@ public:
         TV local_d;
         local_d[0] =  ct * d[0] + st * d[1];
         local_d[1] = -st * d[0] + ct * d[1];
+#ifdef THREEDIM
+        local_d[2] = d[2]; 
+#endif
 
         TV h = (T)0.5 * L;
 
@@ -68,9 +74,11 @@ public:
 
         // Local -> world
         TV n_world;
-
         n_world[0] = ct * n_local[0] - st * n_local[1];
         n_world[1] = st * n_local[0] + ct * n_local[1];
+#ifdef THREEDIM
+        n_world[2] = n_local[2]; 
+#endif
 
         return n_world;
     }
