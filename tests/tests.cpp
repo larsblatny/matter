@@ -478,6 +478,61 @@ TEST(BoundaryTest, MIBF) {
     debug(difff);
     ASSERT_NEAR(difff, 0.0, 1e-12);
 
+#ifdef THREEDIM
+    Simulation sim_four;
+    sim_four.initialize(false);
+
+    sim_four.use_sparse = true; // NB
+
+    sim_four.save_grid = true;
+    sim_four.end_frame = 1;
+    sim_four.fps = 2;
+    sim_four.n_threads = 8;   
+    sim_four.cfl = 0.5;     
+    sim_four.flip_ratio = -0.95; 
+
+    sim_four.gravity = TV::Zero();
+    sim_four.gravity[0] = +9.81 * std::sin(theta);
+    sim_four.gravity[1] = -9.81 * std::cos(theta);
+
+    sim_four.elastic_model = ElasticModel::Hencky;
+    sim_four.E = 1e5;     
+    sim_four.nu = 0.3;   
+    sim_four.rho = 1000; 
+
+    sim_four.Lx = 0.1;
+    sim_four.Ly = 0.05;
+    
+        sim_four.Lz = 0.05;
+    
+    sampleParticles(sim_four, 0.001);
+    for(int p = 0; p < sim_four.Np; p++){
+        sim_four.particles.x[p](0) -= 0.5*sim_four.Lx;
+        sim_four.particles.x[p](1) += 0.5*sim_four.dx;
+    }
+
+    sim_four.plates.push_back(std::make_unique<ObjectPlate>(0, PlateType::bottom, BC::SlipFree, friction)); 
+
+    sim_four.plastic_model = PlasticModel::DPVisc; 
+
+    sim_four.use_pradhana = false; 
+    sim_four.use_mibf = false;             
+
+    sim_four.M = friction;
+    sim_four.q_cohesion = 0;
+    sim_four.visc_exponent = 1;
+    sim_four.visc_time = 0;
+
+    sim_four.simulate();
+
+    auto max_x_it_4 = std::max_element( sim_four.particles.x.begin(), sim_four.particles.x.end(), [](const TV &x1, const TV &x2){return x1(0) < x2(0);} );
+    T max_x_4 = (*max_x_it_4)(0);
+
+    T diffff = std::abs(max_x_1 - max_x_4);
+    debug(diffff);
+    ASSERT_NEAR(diffff, 0.0, 1e-12);
+#endif
+
 }
 
 
@@ -735,6 +790,75 @@ TEST(ElasticityTest, BulkModulus) {
     ASSERT_NEAR(rel_diff, 0.0, 0.03);
 }
 
+TEST(ElasticityTest, BulkModulusMUSL) {
+
+    Simulation sim;
+    sim.initialize(false);
+    sim.reduce_verbose = true;
+    sim.end_frame = 100;
+    sim.fps = 1;
+    sim.n_threads = 8;
+    sim.cfl = 0.6;
+    sim.flip_ratio = -0.95;
+    sim.gravity = TV::Zero();
+    sim.E = 1e6;
+    sim.nu = 0.3;
+    sim.rho = 10000;
+
+    sim.use_musl = true; // NB
+
+    sim.Lx = 1;
+    sim.Ly = 1;
+    #ifdef THREEDIM
+    sim.Lz = 0.2;
+        sampleParticles(sim, 0.02, 8);
+    #else
+        sampleParticles(sim, 0.02, 4);
+    #endif
+
+    T vel = 0.001;
+
+    T vmin_factor = 10;
+    T load_factor = 1;
+
+    #ifdef THREEDIM
+        sim.plates.push_back(std::make_unique<ObjectPlate>(0-0.5*sim.dx,       PlateType::bottom, BC::NoSlip, 0, -1e15, 1e15,   0,  vel, 0, vmin_factor, load_factor));
+        sim.plates.push_back(std::make_unique<ObjectPlate>(sim.Ly+0.5*sim.dx,  PlateType::top,    BC::NoSlip, 0, -1e15, 1e15,   0, -vel, 0, vmin_factor, load_factor));
+    #else
+        sim.plates.push_back(std::make_unique<ObjectPlate>(0-0.5*sim.dx,       PlateType::bottom, BC::NoSlip, 0, -1e15, 1e15,   0,  vel,    vmin_factor, load_factor)); 
+        sim.plates.push_back(std::make_unique<ObjectPlate>(sim.Ly+0.5*sim.dx,  PlateType::top,    BC::NoSlip, 0, -1e15, 1e15,   0, -vel,    vmin_factor, load_factor)); 
+    #endif
+
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.plastic_model = PlasticModel::NoPlasticity;
+
+    sim.simulate();
+
+    TM volavg_cauchy = TM::Zero();
+    TM volavg_kirchh = TM::Zero();
+    T Javg;
+    sim.computeAvgData(volavg_cauchy, volavg_kirchh, Javg);
+
+    #ifdef THREEDIM
+        T volavg_p = -1.0 * (volavg_kirchh(0,0) + volavg_kirchh(1,1) + volavg_kirchh(2,2)) / 3;
+    #else
+        T volavg_p = -1.0 * (volavg_kirchh(0,0) + volavg_kirchh(1,1)) / 2;
+    #endif
+
+    T volavg_epsv = std::log(Javg);
+
+    T measured_K = volavg_p / (-volavg_epsv);
+    T true_K = sim.calculateBulkModulus();
+
+    T rel_diff = std::abs(measured_K - true_K) / true_K;
+
+    debug("true_K:     ", true_K);
+    debug("measured_K: ", measured_K);
+    debug("rel_diff:   ", rel_diff);
+
+    ASSERT_NEAR(rel_diff, 0.0, 0.03);
+}
+
 TEST(EnergyTest, Rotation) {
 
     Simulation sim;
@@ -749,6 +873,70 @@ TEST(EnergyTest, Rotation) {
     sim.E = 1e6;
     sim.nu = 0.3;
     sim.rho = 1550;
+
+    T h_gate, l_gate;
+    sim.Lx = 1;
+    sim.Ly = 1;
+    #ifdef THREEDIM
+        sim.Lz = 0.05;
+    #endif
+    sampleParticles(sim, 0.01);
+
+    T total_energy_init = 0;
+    for(int p = 0; p < sim.Np; p++){
+        sim.particles.x[p](0) -= 0.5*sim.Lx;
+        sim.particles.x[p](1) -= 0.5*sim.Ly;
+
+        T vx = -1.0*sim.particles.x[p](1) + 0.5;
+        T vy =  1.0*sim.particles.x[p](0) + 0.5;
+        sim.particles.v[p](0) = vx;
+        sim.particles.v[p](1) = vy;
+
+        total_energy_init += 0.5*(vx*vx + vy*vy); // per unit mass
+    }
+
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.plastic_model = PlasticModel::NoPlasticity;
+
+    sim.simulate();
+
+    T total_energy_last = 0;
+    for(int p = 0; p < sim.Np; p++){
+        T vx = sim.particles.v[p](0);
+        T vy = sim.particles.v[p](1);
+        #ifdef THREEDIM
+            T vz = sim.particles.v[p](2);
+            total_energy_last += 0.5*(vx*vx + vy*vy + vz*vz); // per unit mass
+        #else
+            total_energy_last += 0.5*(vx*vx + vy*vy); // per unit mass
+        #endif
+    }
+
+    T rel_diff = (total_energy_init - total_energy_last) / total_energy_init;
+
+    debug("rel_diff:   ", rel_diff);
+
+    EXPECT_TRUE((rel_diff >= 0) && (rel_diff <= 1e-3));
+    // Can not have energy increase!
+    // Energy decrease within a relative tolerance
+}
+
+TEST(EnergyTest, RotationMUSL) {
+
+    Simulation sim;
+    sim.initialize(false);
+    sim.reduce_verbose = true;
+    sim.end_frame = 20;
+    sim.fps = 1;
+    sim.gravity = TV::Zero();
+    sim.cfl = 0.5;
+    sim.flip_ratio = -1;
+    sim.n_threads = 8;
+    sim.E = 1e6;
+    sim.nu = 0.3;
+    sim.rho = 1550;
+
+    sim.use_musl = true; // NB
 
     T h_gate, l_gate;
     sim.Lx = 1;
@@ -927,20 +1115,11 @@ TEST(CollapseTest, DruckerPragerTwo) {
 }
 
 
-///////////////////////////// FastSVD /////////////////////////////
-//
-// These tests are templated on the dimension and run for BOTH 2x2 and 3x3 in every
-// build. The rest of the code selects its dimension with the THREEDIM macro, so
-// without this a build would only ever exercise one of the two code paths.
-
 template <int D>
 using MatT = Eigen::Matrix<T, D, D>;
 template <int D>
 using VecT = Eigen::Matrix<T, D, 1>;
 
-// Invariants that must hold for every input, however degenerate:
-//   F = U diag(s) V^T, U and V orthogonal, s >= 0 and decreasing,
-//   det(U)*det(V) = sign(det F).
 template <int D>
 static void expectSVDInvariants(const MatT<D>& F, const std::string& label) {
     FastSVDImpl<D> svd(F);
@@ -964,8 +1143,6 @@ static void expectSVDInvariants(const MatT<D>& F, const std::string& label) {
     for (int i = 0; i + 1 < D; i++)
         EXPECT_GE(s(i), s(i + 1)) << "singular values not decreasing" << at;
 
-    // Only meaningful when F is comfortably nonsingular; for a singular F nothing
-    // determines the sign.
     const T detF = F.determinant();
     if (std::isfinite(detF) && std::abs(detF) > T(1e-6) * std::pow(nrm, D))
         EXPECT_NEAR(U.determinant() * V.determinant(), detF > 0 ? T(1) : T(-1), 1e-12)
