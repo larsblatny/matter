@@ -26,22 +26,22 @@ void Simulation::G2P(){
             TV flipp = TV::Zero();
             TM Bp    = TM::Zero();
             TM v_grad = TM::Zero();
-            unsigned int i_base = std::floor((xp(0)-grid.xc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
-            unsigned int j_base = std::floor((xp(1)-grid.yc)*one_over_dx) - 1;
+            int i_base = stencilbase((xp(0)-grid.xc)*one_over_dx);
+            int j_base = stencilbase((xp(1)-grid.yc)*one_over_dx);
         #ifdef THREEDIM
-            unsigned int k_base = std::floor((xp(2)-grid.zc)*one_over_dx) - 1;
+            int k_base = stencilbase((xp(2)-grid.zc)*one_over_dx);
         #endif
 
-            for(int i = i_base; i < i_base+4; i++){
+            for(int i = i_base; i < i_base+STENCILWIDTH; i++){
                 T xi = grid.x[i];
                 T wi = N((xp(0)-xi)*one_over_dx);
                 T wi_grad = dNdu((xp(0) - xi) * one_over_dx)  * one_over_dx;
-                for(int j = j_base; j < j_base+4; j++){
+                for(int j = j_base; j < j_base+STENCILWIDTH; j++){
                     T yi = grid.y[j];
                     T wj = N((xp(1) - yi)*one_over_dx);
                     T wj_grad = dNdu((xp(1) - yi) * one_over_dx)  * one_over_dx;
         #ifdef THREEDIM
-                    for(int k = k_base; k < k_base+4; k++){
+                    for(int k = k_base; k < k_base+STENCILWIDTH; k++){
                         T zi = grid.z[k];
                         T wk = N((xp(2) - zi)*one_over_dx);
                         T wk_grad = dNdu((xp(2) - zi) * one_over_dx)  * one_over_dx;
@@ -116,7 +116,7 @@ void Simulation::G2PSparseScan() {
     unsigned int plastic_count = 0;
 
     const int node_lo_offset = 0;
-    const int node_hi_offset = 2;
+    const int node_hi_offset = STENCILWIDTH - 1;
 
     // min/max nodal id
     std::vector<int> tminx(n_threads, INT32_MAX);
@@ -144,9 +144,9 @@ void Simulation::G2PSparseScan() {
             TV flipp = TV::Zero();
             TM Bp    = TM::Zero();
             TM v_grad = TM::Zero();
-            int i_base = std::floor(xp(0)*one_over_dx - 0.5); 
-            int j_base = std::floor(xp(1)*one_over_dx - 0.5); 
-            int k_base = std::floor(xp(2)*one_over_dx - 0.5);
+            int i_base = stencilbase(xp(0)*one_over_dx);
+            int j_base = stencilbase(xp(1)*one_over_dx);
+            int k_base = stencilbase(xp(2)*one_over_dx);
 
             // Get local min/max base
             int ilo = i_base + node_lo_offset;
@@ -164,15 +164,15 @@ void Simulation::G2PSparseScan() {
             lmaxz = std::max(lmaxz, khi);
 
             // Local grid nodes loop
-            for(int ix = i_base+0; ix<i_base+3; ix++){
+            for(int ix = i_base+0; ix<i_base+STENCILWIDTH; ix++){
                 T xi = ix * dx;
                 T wi = N((xp(0)-xi)*one_over_dx);
                 T wi_grad = dNdu((xp(0) - xi) * one_over_dx)  * one_over_dx;
-                for (int iy=j_base+0; iy<j_base+3; iy++) {
+                for (int iy=j_base+0; iy<j_base+STENCILWIDTH; iy++) {
                     T yj = iy * dx;
                     T wj = N((xp(1) - yj)*one_over_dx);
                     T wj_grad = dNdu((xp(1) - yj) * one_over_dx)  * one_over_dx;
-                    for (int iz=k_base+0; iz<k_base+3; iz++) {
+                    for (int iz=k_base+0; iz<k_base+STENCILWIDTH; iz++) {
                         T zk = iz * dx;
                         T wk = N((xp(2) - zk)*one_over_dx);
                         T wk_grad = dNdu((xp(2) - zk) * one_over_dx)  * one_over_dx;
