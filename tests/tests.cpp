@@ -10,6 +10,8 @@
 #include "../src/objects/object_ground.hpp"
 #include "../src/objects/object_ground_rotated.hpp"
 
+#include <random>
+
 
 TEST(BoundaryTest, AnalyticSlipFree) {
 
@@ -922,4 +924,318 @@ TEST(CollapseTest, DruckerPragerTwo) {
     T diff = std::abs(max_x - 0.56);
     debug("diff:   ", diff);
     ASSERT_NEAR(diff, 0.0, 0.011);
+}
+
+
+///////////////////////////// FastSVD /////////////////////////////
+//
+// These tests are templated on the dimension and run for BOTH 2x2 and 3x3 in every
+// build. The rest of the code selects its dimension with the THREEDIM macro, so
+// without this a build would only ever exercise one of the two code paths.
+
+template <int D>
+using MatT = Eigen::Matrix<T, D, D>;
+template <int D>
+using VecT = Eigen::Matrix<T, D, 1>;
+
+// Invariants that must hold for every input, however degenerate:
+//   F = U diag(s) V^T, U and V orthogonal, s >= 0 and decreasing,
+//   det(U)*det(V) = sign(det F).
+template <int D>
+static void expectSVDInvariants(const MatT<D>& F, const std::string& label) {
+    FastSVDImpl<D> svd(F);
+    const MatT<D> U = svd.matrixU();
+    const MatT<D> V = svd.matrixV();
+    const VecT<D> s = svd.singularValues();
+    const std::string at = " [D=" + std::to_string(D) + " " + label + "]";
+
+    const T maxabs = F.cwiseAbs().maxCoeff();
+    const T nrm = (maxabs > 0 && std::isfinite(maxabs)) ? maxabs : T(1);
+
+    EXPECT_LT((U * s.asDiagonal() * V.transpose() - F).cwiseAbs().maxCoeff() / nrm, 1e-12)
+        << "reconstruction" << at;
+    EXPECT_LT((U.transpose() * U - MatT<D>::Identity()).cwiseAbs().maxCoeff(), 1e-12)
+        << "U orthogonality" << at;
+    EXPECT_LT((V.transpose() * V - MatT<D>::Identity()).cwiseAbs().maxCoeff(), 1e-12)
+        << "V orthogonality" << at;
+
+    for (int i = 0; i < D; i++)
+        EXPECT_GE(s(i), T(0)) << "singular value " << i << " negative" << at;
+    for (int i = 0; i + 1 < D; i++)
+        EXPECT_GE(s(i), s(i + 1)) << "singular values not decreasing" << at;
+
+    // Only meaningful when F is comfortably nonsingular; for a singular F nothing
+    // determines the sign.
+    const T detF = F.determinant();
+    if (std::isfinite(detF) && std::abs(detF) > T(1e-6) * std::pow(nrm, D))
+        EXPECT_NEAR(U.determinant() * V.determinant(), detF > 0 ? T(1) : T(-1), 1e-12)
+            << "det(U)det(V) inconsistent with sign(det F)" << at;
+}
+
+template <int D>
+static MatT<D> randMat(std::mt19937& rng, T amp) {
+    std::normal_distribution<T> gauss(0, 1);
+    MatT<D> M;
+    for (int i = 0; i < D; i++)
+        for (int j = 0; j < D; j++) M(i, j) = amp * gauss(rng);
+    return M;
+}
+
+template <int D>
+static MatT<D> randRot(std::mt19937& rng) {
+    Eigen::JacobiSVD<MatT<D>> sv(randMat<D>(rng, 1), Eigen::ComputeFullU | Eigen::ComputeFullV);
+    return MatT<D>(sv.matrixU() * sv.matrixV().transpose());
+}
+
+template <int D>
+static void runMatchesEigen() {
+    std::mt19937 rng(20240517);
+    // Amplitudes spanning near-rigid to heavily distorted deformation gradients.
+    for (T amp : {T(0.01), T(0.1), T(0.5), T(1.0)}) {
+        for (int trial = 0; trial < 3000; trial++) {
+            const MatT<D> F = MatT<D>::Identity() + randMat<D>(rng, amp);
+            expectSVDInvariants<D>(F, "random");
+
+            Eigen::JacobiSVD<MatT<D>> ref(F, Eigen::ComputeFullU | Eigen::ComputeFullV);
+            FastSVDImpl<D> svd(F);
+            const VecT<D> se = ref.singularValues();
+            if (se(D - 1) <= T(1e-6) * se(0))
+                continue; // not well determined; invariants above still apply
+
+            EXPECT_LT((svd.singularValues() - se).cwiseAbs().maxCoeff() / se(0), 1e-11)
+                << "singular values disagree with Eigen [D=" << D << "]";
+
+            // The two quantities plasticity.cpp actually builds from the SVD.
+            const VecT<D> h  = svd.singularValues().array().abs().max(1e-4).log();
+            const VecT<D> he = se.array().abs().max(1e-4).log();
+            EXPECT_LT((svd.matrixU() * h.asDiagonal() * svd.matrixU().transpose()
+                       - ref.matrixU() * he.asDiagonal() * ref.matrixU().transpose())
+                          .cwiseAbs().maxCoeff(), 1e-9)
+                << "Kirchhoff stress disagrees [D=" << D << "]";
+            EXPECT_LT((svd.matrixU() * h.array().exp().matrix().asDiagonal() * svd.matrixV().transpose()
+                       - ref.matrixU() * he.array().exp().matrix().asDiagonal() * ref.matrixV().transpose())
+                          .cwiseAbs().maxCoeff() / se(0), 1e-10)
+                << "projected F disagrees [D=" << D << "]";
+        }
+    }
+}
+
+TEST(FastSVDTest, MatchesEigenOnDeformationGradients) {
+    runMatchesEigen<2>();
+    runMatchesEigen<3>();
+}
+
+template <int D>
+static void runDegenerate() {
+    std::mt19937 rng(11);
+
+    expectSVDInvariants<D>(MatT<D>::Zero(), "zero");
+    expectSVDInvariants<D>(MatT<D>::Identity(), "identity");
+    expectSVDInvariants<D>(MatT<D>(-MatT<D>::Identity()), "negative identity");
+
+    for (int trial = 0; trial < 1500; trial++) {
+        // Pure rotations and reflections: all singular values equal, the worst case
+        // for any method relying on eigenvector separation.
+        const MatT<D> R = randRot<D>(rng);
+        expectSVDInvariants<D>(R, "rotation");
+        MatT<D> refl = R;
+        refl.col(0) *= -1;
+        expectSVDInvariants<D>(refl, "reflection");
+
+        // Rank deficient by construction.
+        MatT<D> rd = randMat<D>(rng, 1);
+        rd.col(1) = rd.col(0);
+        expectSVDInvariants<D>(rd, "rank deficient");
+
+        // Prescribed spectra: repeated, collapsed, and extreme condition numbers.
+        VecT<D> sp;
+        if constexpr (D == 3) {
+            sp = VecT<D>(1, 1, 1);
+            expectSVDInvariants<D>(randRot<D>(rng) * sp.asDiagonal() * randRot<D>(rng), "sigma 1,1,1");
+            sp = VecT<D>(2, 2, 1);
+            expectSVDInvariants<D>(randRot<D>(rng) * sp.asDiagonal() * randRot<D>(rng), "sigma 2,2,1");
+            sp = VecT<D>(1, 1, 0);
+            expectSVDInvariants<D>(randRot<D>(rng) * sp.asDiagonal() * randRot<D>(rng), "sigma 1,1,0");
+            sp = VecT<D>(1, 0, 0);
+            expectSVDInvariants<D>(randRot<D>(rng) * sp.asDiagonal() * randRot<D>(rng), "sigma 1,0,0");
+            sp = VecT<D>(1e8, 1, 1e-8);
+            expectSVDInvariants<D>(randRot<D>(rng) * sp.asDiagonal() * randRot<D>(rng), "ill conditioned");
+            sp = VecT<D>(1e-30, 1e-30, 1e-30);
+            expectSVDInvariants<D>(randRot<D>(rng) * sp.asDiagonal() * randRot<D>(rng), "tiny");
+        } else {
+            sp = VecT<D>(1, 1);
+            expectSVDInvariants<D>(randRot<D>(rng) * sp.asDiagonal() * randRot<D>(rng), "sigma 1,1");
+            sp = VecT<D>(1, 0);
+            expectSVDInvariants<D>(randRot<D>(rng) * sp.asDiagonal() * randRot<D>(rng), "sigma 1,0");
+            sp = VecT<D>(1e8, 1e-8);
+            expectSVDInvariants<D>(randRot<D>(rng) * sp.asDiagonal() * randRot<D>(rng), "ill conditioned");
+            sp = VecT<D>(1e-30, 1e-30);
+            expectSVDInvariants<D>(randRot<D>(rng) * sp.asDiagonal() * randRot<D>(rng), "tiny");
+        }
+        // Extreme magnitudes, which the power-of-two prescaling exists to handle.
+        expectSVDInvariants<D>(randMat<D>(rng, 1e150),  "huge");
+        expectSVDInvariants<D>(randMat<D>(rng, 1e-150), "small");
+    }
+}
+
+TEST(FastSVDTest, DegenerateAndSingularInputs) {
+    runDegenerate<2>();
+    runDegenerate<3>();
+}
+
+template <int D>
+static void runExtremeMagnitudes() {
+    // frexp reports exponents outside the representable power-of-two range for
+    // subnormal inputs and for inputs near the largest finite double. Before the
+    // prescaling exponent was clamped, the first produced NaN (0 * inf) and the
+    // second Inf (the undo step overflowing), where Eigen returns finite results.
+    // Reconstruction is not asserted: a subnormal input carries only a few
+    // significant bits, so its own representation granularity dominates.
+    std::mt19937 rng(5);
+    std::uniform_real_distribution<T> unif(-1, 1);
+    const T mags[] = {T(1e-320), T(1e-310), std::numeric_limits<T>::denorm_min(),
+                      std::numeric_limits<T>::min(), T(1e300), T(1e307)};
+
+    for (T mag : mags) {
+        for (int trial = 0; trial < 200; trial++) {
+            MatT<D> F;
+            for (int i = 0; i < D; i++)
+                for (int j = 0; j < D; j++) F(i, j) = mag * unif(rng);
+
+            FastSVDImpl<D> svd(F);
+            ASSERT_TRUE(svd.singularValues().allFinite()) << "magnitude " << mag << " D=" << D;
+            ASSERT_TRUE(svd.matrixU().allFinite())        << "magnitude " << mag << " D=" << D;
+            ASSERT_TRUE(svd.matrixV().allFinite())        << "magnitude " << mag << " D=" << D;
+
+            EXPECT_LT((svd.matrixU().transpose() * svd.matrixU() - MatT<D>::Identity())
+                          .cwiseAbs().maxCoeff(), 1e-12) << "magnitude " << mag << " D=" << D;
+            EXPECT_LT((svd.matrixV().transpose() * svd.matrixV() - MatT<D>::Identity())
+                          .cwiseAbs().maxCoeff(), 1e-12) << "magnitude " << mag << " D=" << D;
+
+            Eigen::JacobiSVD<MatT<D>> ref(F, Eigen::ComputeFullU | Eigen::ComputeFullV);
+            const VecT<D> se = ref.singularValues();
+            if (se(0) > 0)
+                EXPECT_LT((svd.singularValues() - se).cwiseAbs().maxCoeff() / se(0), 1e-10)
+                    << "magnitude " << mag << " D=" << D;
+        }
+    }
+}
+
+TEST(FastSVDTest, SubnormalAndNearOverflowInputs) {
+    runExtremeMagnitudes<2>();
+    runExtremeMagnitudes<3>();
+}
+
+// Checks the singular values against EXACT ALGEBRA rather than another solver.
+// For an integer F, C = F^T F is an exact integer matrix, so the coefficients of
+// its characteristic polynomial are exact integers, and the singular values must
+// satisfy the elementary symmetric identities
+//     sum sigma_i^2 = tr C,   sum_{i<j} sigma_i^2 sigma_j^2 = M,   prod sigma_i^2 = det C
+// where M is the sum of the principal 2x2 minors. Those three determine the
+// eigenvalue multiset uniquely, so no root finding or reference SVD is involved.
+template <int D>
+static void runExactAlgebra() {
+    std::mt19937 rng(777);
+    std::uniform_int_distribution<int> coeff(-10, 10);
+
+    for (int trial = 0; trial < 4000; trial++) {
+        MatT<D> F;
+        long long Fi[D][D];
+        for (int i = 0; i < D; i++)
+            for (int j = 0; j < D; j++) { Fi[i][j] = coeff(rng); F(i, j) = T(Fi[i][j]); }
+
+        long long C[D][D];
+        for (int i = 0; i < D; i++)
+            for (int j = 0; j < D; j++) {
+                long long acc = 0;
+                for (int k = 0; k < D; k++) acc += Fi[k][i] * Fi[k][j];
+                C[i][j] = acc;
+            }
+
+        long long tr = 0, minors = 0, det = 0;
+        for (int i = 0; i < D; i++) tr += C[i][i];
+        if constexpr (D == 2) {
+            minors = C[0][0] * C[1][1] - C[0][1] * C[1][0];
+        } else {
+            minors = (C[0][0]*C[1][1] - C[0][1]*C[1][0]) + (C[0][0]*C[2][2] - C[0][2]*C[2][0])
+                   + (C[1][1]*C[2][2] - C[1][2]*C[2][1]);
+            det = C[0][0]*(C[1][1]*C[2][2] - C[1][2]*C[2][1])
+                - C[0][1]*(C[1][0]*C[2][2] - C[1][2]*C[2][0])
+                + C[0][2]*(C[1][0]*C[2][1] - C[1][1]*C[2][0]);
+        }
+
+        FastSVDImpl<D> svd(F);
+        const VecT<D> s = svd.singularValues();
+        long double l[D];
+        for (int i = 0; i < D; i++) l[i] = (long double)s(i) * (long double)s(i);
+
+        // Normalize by the natural scale of each identity so tolerances are relative.
+        const long double sc = std::max<long double>(1.0L, (long double)tr);
+        long double e1 = 0, e2 = 0, e3 = 0;
+        for (int i = 0; i < D; i++) e1 += l[i];
+        e1 -= (long double)tr;
+        if constexpr (D == 2) {
+            e2 = l[0]*l[1] - (long double)minors;
+        } else {
+            e2 = l[0]*l[1] + l[0]*l[2] + l[1]*l[2] - (long double)minors;
+            e3 = l[0]*l[1]*l[2] - (long double)det;
+        }
+        EXPECT_LT(std::abs(e1) / sc,          1e-12) << "trace identity, D=" << D;
+        EXPECT_LT(std::abs(e2) / (sc*sc),     1e-12) << "minor identity, D=" << D;
+        if constexpr (D == 3)
+            EXPECT_LT(std::abs(e3) / (sc*sc*sc), 1e-12) << "determinant identity, D=" << D;
+    }
+}
+
+TEST(FastSVDTest, ExactAlgebraIdentitiesOnIntegerMatrices) {
+    runExactAlgebra<2>();
+    runExactAlgebra<3>();
+}
+
+// Matrices whose SVD is known in closed form.
+TEST(FastSVDTest, ClosedFormCases) {
+    const T phi = (T(1) + std::sqrt(T(5))) / T(2);   // golden ratio
+
+    {   // [[1,1],[0,1]] has singular values phi and 1/phi exactly
+        Eigen::Matrix<T,2,2> F; F << 1, 1, 0, 1;
+        FastSVDImpl<2> s(F);
+        EXPECT_NEAR(s.singularValues()(0), phi,        1e-15);
+        EXPECT_NEAR(s.singularValues()(1), T(1) / phi, 1e-15);
+    }
+    {   // 5 x (3-4-5 rotation): both singular values exactly 5
+        Eigen::Matrix<T,2,2> F; F << 3, -4, 4, 3;
+        FastSVDImpl<2> s(F);
+        EXPECT_NEAR(s.singularValues()(0), T(5), 1e-14);
+        EXPECT_NEAR(s.singularValues()(1), T(5), 1e-14);
+    }
+    {   // antidiagonal: singular values 3 and 2
+        Eigen::Matrix<T,2,2> F; F << 0, 2, 3, 0;
+        FastSVDImpl<2> s(F);
+        EXPECT_NEAR(s.singularValues()(0), T(3), 1e-14);
+        EXPECT_NEAR(s.singularValues()(1), T(2), 1e-14);
+    }
+    {   // 5 x (rotation about z): all three singular values exactly 5
+        Eigen::Matrix<T,3,3> F; F << 3, -4, 0, 4, 3, 0, 0, 0, 5;
+        FastSVDImpl<3> s(F);
+        for (int i = 0; i < 3; i++) EXPECT_NEAR(s.singularValues()(i), T(5), 1e-14);
+    }
+    {   // signed diagonal: singular values are the sorted magnitudes
+        Eigen::Matrix<T,3,3> F; F << 2, 0, 0, 0, -6, 0, 0, 0, 3;
+        FastSVDImpl<3> s(F);
+        EXPECT_NEAR(s.singularValues()(0), T(6), 1e-14);
+        EXPECT_NEAR(s.singularValues()(1), T(3), 1e-14);
+        EXPECT_NEAR(s.singularValues()(2), T(2), 1e-14);
+    }
+    {   // golden-ratio block plus a unit direction: phi, 1, 1/phi
+        Eigen::Matrix<T,3,3> F; F << 1, 1, 0, 0, 1, 0, 0, 0, 1;
+        FastSVDImpl<3> s(F);
+        EXPECT_NEAR(s.singularValues()(0), phi,        1e-15);
+        EXPECT_NEAR(s.singularValues()(1), T(1),       1e-15);
+        EXPECT_NEAR(s.singularValues()(2), T(1) / phi, 1e-15);
+    }
+    {   // 7 x permutation: all singular values exactly 7
+        Eigen::Matrix<T,3,3> F; F << 0, 0, 7, 0, 7, 0, 7, 0, 0;
+        FastSVDImpl<3> s(F);
+        for (int i = 0; i < 3; i++) EXPECT_NEAR(s.singularValues()(i), T(7), 1e-14);
+    }
 }
