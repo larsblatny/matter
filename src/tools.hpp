@@ -230,6 +230,17 @@ inline T d2Ndu2(T u){
  #error Unsupported spline degree
 #endif
 
+// Stencil implied by the spline degree above. A degree-n B-spline has support of
+// width (n+1)*dx, so it reaches at most n+1 nodes per direction, and the window
+// has to be anchored so that those nodes always fall inside it:
+#if SPLINEDEG == 3
+    #define STENCILWIDTH 4
+    inline int stencilbase(T u){ return int(std::floor(u)) - 1; }
+#else
+    #define STENCILWIDTH 3
+    inline int stencilbase(T u){ return int(std::floor(u - 0.5)); }
+#endif
+
 // Taken from: https://stackoverflow.com/questions/21216909/these-python-functions-in-c
 // Works like numpy.arange, does NOT include stop value
 inline std::vector<T> arange(T start, T stop, T step) {
