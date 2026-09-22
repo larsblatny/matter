@@ -26,7 +26,7 @@ void Simulation::resetSparseGridScan() {
 // Get particles min and max node index
 void Simulation::getParticlesMinMax() {
     const int node_lo_offset = 0;
-    const int node_hi_offset = 2;
+    const int node_hi_offset = STENCILWIDTH - 1;
 
     std::vector<int> tminx(n_threads, INT32_MAX);
     std::vector<int> tminy(n_threads, INT32_MAX);
@@ -48,9 +48,9 @@ void Simulation::getParticlesMinMax() {
         #pragma omp for nowait
         for (int p=0; p<Np; p++) {
             TV xp = particles.x[p];
-            int i_base = std::floor(xp(0)*one_over_dx - 0.5); 
-            int j_base = std::floor(xp(1)*one_over_dx - 0.5); 
-            int k_base = std::floor(xp(2)*one_over_dx - 0.5);
+            int i_base = stencilbase(xp(0)*one_over_dx);
+            int j_base = stencilbase(xp(1)*one_over_dx);
+            int k_base = stencilbase(xp(2)*one_over_dx);
 
             // get local min/max base
             int ilo = i_base + node_lo_offset;
@@ -92,14 +92,14 @@ void Simulation::markActiveBlocksScan() {
     #pragma omp parallel for num_threads(n_threads)
     for (int p=0; p<Np; p++) {
         TV xp = particles.x[p];
-        int i_base = std::floor(xp(0)*one_over_dx - 0.5); 
-        int j_base = std::floor(xp(1)*one_over_dx - 0.5); 
-        int k_base = std::floor(xp(2)*one_over_dx - 0.5);
+        int i_base = stencilbase(xp(0)*one_over_dx);
+        int j_base = stencilbase(xp(1)*one_over_dx);
+        int k_base = stencilbase(xp(2)*one_over_dx);
 
-        // loop on 3x3x3 stencil for quadratic B-splines
-        for (int i=i_base; i<i_base+3; ++i)
-        for (int j=j_base; j<j_base+3; ++j)
-        for (int k=k_base; k<k_base+3; ++k) {
+        // loop on the stencil implied by the spline degree
+        for (int i=i_base; i<i_base+STENCILWIDTH; ++i)
+        for (int j=j_base; j<j_base+STENCILWIDTH; ++j)
+        for (int k=k_base; k<k_base+STENCILWIDTH; ++k) {
             int bx = BlockScanGrid::floor_div(i, B);
             int by = BlockScanGrid::floor_div(j, B);
             int bz = BlockScanGrid::floor_div(k, B);

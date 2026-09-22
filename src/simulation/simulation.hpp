@@ -15,6 +15,7 @@
 #include <functional>
 
 #include "../tools.hpp"
+#include "../svd.hpp"
 #include "../data_structures.hpp"
 #include "../block_scan_grid.hpp"
 #include "../timer.hpp"
@@ -259,8 +260,8 @@ inline TM Simulation::NeoHookeanPiola(TM & Fe){
 } // end NeoHookeanPiola
 
 inline TM Simulation::HenckyPiola(TM & Fe){
-    Eigen::JacobiSVD<TM> svd(Fe, Eigen::ComputeFullU | Eigen::ComputeFullV);
-    TA sigma = svd.singularValues().array(); 
+    FastSVD svd(Fe);
+    TA sigma = svd.singularValues().array();
     TM logSigma = sigma.abs().log().matrix().asDiagonal();
     TM invSigma = sigma.inverse().matrix().asDiagonal();
     TM dPsidF = svd.matrixU() * ( 2*mu*invSigma*logSigma + lambda*logSigma.trace()*invSigma ) * svd.matrixV().transpose();

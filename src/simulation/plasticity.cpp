@@ -13,7 +13,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
     if (plastic_model == PlasticModel::NoPlasticity){
 
-        Eigen::JacobiSVD<TM> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
+        FastSVD svd(Fe_trial);
         TV hencky = svd.singularValues().array().abs().max(1e-4).log();
 
         particles.F[p] = Fe_trial;
@@ -32,7 +32,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
     else if (plastic_model == PlasticModel::VM || plastic_model == PlasticModel::DP || plastic_model == PlasticModel::DPSoft || plastic_model == PlasticModel::MCC || plastic_model == PlasticModel::VMVisc || plastic_model == PlasticModel::DPVisc || plastic_model == PlasticModel::MCCVisc || plastic_model == PlasticModel::DPMui || plastic_model == PlasticModel::MCCMui){
 
-        Eigen::JacobiSVD<TM> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
+        FastSVD svd(Fe_trial);
         // TV hencky = svd.singularValues().array().log();
         TV hencky = svd.singularValues().array().abs().max(1e-4).log();
         T  hencky_trace = hencky.sum();
