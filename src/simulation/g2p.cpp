@@ -12,10 +12,6 @@ void Simulation::G2P(){
         debug("G2P");
     #endif
 
-    std::fill( particles.pic.begin(),  particles.pic.end(),  TV::Zero() );
-    std::fill( particles.flip.begin(), particles.flip.end(), TV::Zero() );
-    std::fill( particles.Bmat.begin(), particles.Bmat.end(), TM::Zero() );
-
     #pragma omp parallel num_threads(n_threads) reduction(+:plastic_count)
     {
 
