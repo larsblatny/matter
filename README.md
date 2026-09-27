@@ -161,11 +161,10 @@ int main(){
     sampleParticles(sim, /*sampling radius*/ 0.01);
 
     sim.plates.push_back(std::make_unique<ObjectPlate>(
-        /*position*/ 0, 
-        /*type*/ PlateType::bottom, 
-        /*BC*/ BC::NoSlip,        
-        /*friction*/ 0.5
-    ));          
+        /*position*/ 0,
+        /*type*/ PlateType::bottom,
+        /*BC*/ BC::NoSlip
+    ));
 
     sim.rho = 1000;         // density (kg/m3)
     sim.gravity[1] = -9.81; // gravity
@@ -203,7 +202,7 @@ sim.Ly = 1
 
 matter.sample_particles(sim, 0.01)  # sampling radius
 
-sim.add_plate(matter.ObjectPlate(0, matter.PlateType.bottom, matter.BC.NoSlip, 0.5))
+sim.add_plate(matter.ObjectPlate(0, matter.PlateType.bottom, matter.BC.NoSlip))
 
 sim.rho = 1000              # density (kg/m3)
 sim.gravity = [0, -9.81]    # gravity
