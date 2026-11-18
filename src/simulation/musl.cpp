@@ -34,20 +34,20 @@ void Simulation::MUSL(){
         #pragma omp for nowait
         for(int p = 0; p < Np; p++){
             TV xp = particles.x[p];
-            unsigned int i_base = std::max(0, int(std::floor((xp(0)-grid.xc)*one_over_dx)) - 1); // i_base = std::min(i_base, Nx-4); // the subtraction of one is valid for both quadratic and cubic splines
-            unsigned int j_base = std::max(0, int(std::floor((xp(1)-grid.yc)*one_over_dx)) - 1); // j_base = std::min(j_base, Ny-4);
+            int i_base = std::max(0, stencilbase((xp(0)-grid.xc)*one_over_dx));
+            int j_base = std::max(0, stencilbase((xp(1)-grid.yc)*one_over_dx));
         #ifdef THREEDIM
-            unsigned int k_base = std::max(0, int(std::floor((xp(2)-grid.zc)*one_over_dx)) - 1); // k_base = std::min(k_base, Nz-4);
+            int k_base = std::max(0, stencilbase((xp(2)-grid.zc)*one_over_dx));
         #endif
 
-            for(int i = i_base; i < i_base+4; i++){
+            for(int i = i_base; i < i_base+STENCILWIDTH; i++){
                 T xi = grid.x[i];
                 T wi = N((xp(0)-xi)*one_over_dx);
-                for(int j = j_base; j < j_base+4; j++){
+                for(int j = j_base; j < j_base+STENCILWIDTH; j++){
                     T yi = grid.y[j];
                     T wj = N((xp(1) - yi)*one_over_dx);
         #ifdef THREEDIM
-                    for(int k = k_base; k < k_base+4; k++){
+                    for(int k = k_base; k < k_base+STENCILWIDTH; k++){
                         T zi = grid.z[k];
                         T wk = N((xp(2) - zi)*one_over_dx);
                         T weight = wi * wj * wk;

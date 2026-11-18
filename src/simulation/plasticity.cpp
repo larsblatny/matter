@@ -13,7 +13,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
     if (plastic_model == PlasticModel::NoPlasticity){
 
-        Eigen::JacobiSVD<TM> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
+        FastSVD svd(Fe_trial);
         TV hencky = svd.singularValues().array().abs().max(1e-4).log();
 
         particles.F[p] = Fe_trial;
@@ -32,7 +32,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
     else if (plastic_model == PlasticModel::VM || plastic_model == PlasticModel::DP || plastic_model == PlasticModel::DPSoft || plastic_model == PlasticModel::MCC || plastic_model == PlasticModel::VMVisc || plastic_model == PlasticModel::DPVisc || plastic_model == PlasticModel::MCCVisc || plastic_model == PlasticModel::DPMui || plastic_model == PlasticModel::MCCMui){
 
-        Eigen::JacobiSVD<TM> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
+        FastSVD svd(Fe_trial);
         // TV hencky = svd.singularValues().array().log();
         TV hencky = svd.singularValues().array().abs().max(1e-4).log();
         T  hencky_trace = hencky.sum();
@@ -224,57 +224,70 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                         exit = 1;
                     }
                 }
-                else{
+                else{ // exponent not equal to one or hardening activated
+                    // safeguarded Newton-Raphson in [dg_lo, dg_hi] combined with bisection.
+                    T dg_lo = 0;
+                    T dg_hi = (q_trial - q_min) / f_mu_prefac;
+                    T dg_step_old = 2 * (dg_hi - dg_lo); // lets the first Newton step through the progress check
 
                     delta_gamma = 0.01 * (q_trial - q_yield) / f_mu_prefac; // initial guess
-                    int max_iter = 60;
+                    
                     T residual;
                     T residual_diff;
+                    bool converged = false;
+                    int max_iter = 100;
                     for (int iter = 0; iter < max_iter; iter++) {
-                        if (iter == max_iter - 1){ // did not break loop
-                            debug("VMVisc: FATAL did not exit loop at iter = ", iter);
-                            exit = 1;
-                        }
 
-                        q_yield = q_min + (q_max - q_min) * exp(-xi * (particles.eps_pl_dev[p] + (1.0/d_prefac) * delta_gamma));
-                        T q_yield_diff = -xi / d_prefac * (q_max - q_min) * exp(-xi * (particles.eps_pl_dev[p] + (1.0/d_prefac) * delta_gamma));
+                        T exp_term = exp(-xi * (particles.eps_pl_dev[p] + (1.0/d_prefac) * delta_gamma));
+                        q_yield = q_min + (q_max - q_min) * exp_term;
+                        T q_yield_diff = -xi / d_prefac * (q_max - q_min) * exp_term;
 
-                                                
                         if (use_duvaut_lions_formulation){
-
-                            residual = q_trial - q_yield - f_mu_prefac * ( std::pow(visc_time/dt*delta_gamma, visc_exponent) + delta_gamma );
-                            if (std::abs(residual) < 1e-2) {
-                                break;
-                            }
+                            residual      = q_trial - q_yield - f_mu_prefac * ( std::pow(visc_time/dt*delta_gamma, visc_exponent) + delta_gamma );
                             residual_diff = - q_yield_diff - f_mu_prefac * ( std::pow(visc_time/dt, visc_exponent) * visc_exponent * std::pow(delta_gamma, visc_exponent-1) + 1 );
-
                         }
                         else{ // perzyna
-
                             T tm = visc_time * delta_gamma + dt;
                             T tmp = dt / tm;
                             T tmp1 = std::pow(tmp, visc_exponent);
-
-                            residual = (q_trial - f_mu_prefac * delta_gamma) * tmp1 - q_yield;
-                            if (std::abs(residual) < 1e-2) {
-                                break;
-                            }
-
+                            residual      = (q_trial - f_mu_prefac * delta_gamma) * tmp1 - q_yield;
                             residual_diff = -f_mu_prefac * tmp1 + (q_trial - f_mu_prefac * delta_gamma) * visc_exponent * std::pow(tmp, visc_exponent - 1) * (-visc_time * dt) / (tm * tm) - q_yield_diff;
                         }
 
-                        T diff_tol = 1e-14;
-                        if (std::abs(residual_diff) < diff_tol){ // otherwise division by zero
-                            debug("VMVisc: WARNING residual_diff too small in abs value = ", residual_diff);
-                            residual_diff = (residual_diff >= 0 ? diff_tol : -diff_tol);
+                        if (std::abs(residual) < 1e-10 * q_trial) { // relative tolerance
+                            converged = true;
+                            break;
                         }
 
-                        delta_gamma -= residual / residual_diff;
+                        if (residual > 0) // update bracket: residual > 0 means the root lies to the right
+                            dg_lo = delta_gamma;
+                        else
+                            dg_hi = delta_gamma;
 
-                        if (delta_gamma < 0) // not possible and can also lead to division by zero
-                            delta_gamma = 1e-10;
+                        if (dg_hi - dg_lo < 1e-14 * dg_hi) {
+                            converged = true;
+                            break;
+                        }
+
+                        T dg_step   = residual / residual_diff;
+                        T dg_newton = delta_gamma - dg_step;
+
+                        // bisect if Newton step is not finite, leaves the bracket or does not shrink fast enough
+                        if (!std::isfinite(dg_newton) || dg_newton <= dg_lo || dg_newton > dg_hi || std::abs(2 * dg_step) > std::abs(dg_step_old)) {
+                            dg_step_old = 0.5 * (dg_hi - dg_lo);
+                            delta_gamma = dg_lo + dg_step_old;
+                        }
+                        else {
+                            dg_step_old = dg_step;
+                            delta_gamma = dg_newton;
+                        }
 
                     } // end N-R iterations
+
+                    if (!converged){
+                        debug("VMVisc: FATAL N-R did not converge, residual = ", residual);
+                        exit = 1;
+                    }
                 } // end if visc_exponent > 1
 
                 eps_pl_dev_inst = (1.0/d_prefac) * delta_gamma;
@@ -364,53 +377,65 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                     }
                 }
                 else{ // exponent not equal to one
+                    // safeguarded Newton-Raphson in [dg_lo, dg_hi] combined with bisection.
+                    T dg_lo = 0;
+                    T dg_hi = (q_trial - q_yield) / f_mu_prefac;
+                    T dg_step_old = 2 * (dg_hi - dg_lo); // lets the first Newton step through the progress check
 
-                    delta_gamma = 0.01 * (q_trial - q_yield) / f_mu_prefac; // initial guess
-
-                    int max_iter = 60;
+                    delta_gamma = 0.01 * dg_hi; // initial guess
+                    
+                    T residual;
+                    T residual_diff;
+                    bool converged = false;
+                    int max_iter = 100;
                     for (int iter = 0; iter < max_iter; iter++) {
-                        if (iter == max_iter - 1){ // did not break loop
-                            debug("DPVisc: FATAL did not exit loop at iter = ", iter);
-                            exit = 1;
-                        }
 
-                        T residual;
-                        T residual_diff;
                         if (use_duvaut_lions_formulation){
-
-                            residual = q_trial - q_yield - f_mu_prefac * ( std::pow(visc_time/dt*delta_gamma, visc_exponent) + delta_gamma );
-                            if (std::abs(residual) < 1e-2) {
-                                break;
-                            }
+                            residual      = q_trial - q_yield - f_mu_prefac * ( std::pow(visc_time/dt*delta_gamma, visc_exponent) + delta_gamma );
                             residual_diff = -f_mu_prefac * ( std::pow(visc_time/dt, visc_exponent) * visc_exponent * std::pow(delta_gamma, visc_exponent-1) + 1 );
-
                         }
-                        else{
-
+                        else{ // perzyna
                             T tm = visc_time * delta_gamma + dt;
                             T tmp = dt / tm;
                             T tmp1 = std::pow(tmp, visc_exponent);
-
-                            residual = (q_trial - f_mu_prefac * delta_gamma) * tmp1 - q_yield;
-                            if (std::abs(residual) < 1e-2) {
-                                break;
-                            }
+                            residual      = (q_trial - f_mu_prefac * delta_gamma) * tmp1 - q_yield;
                             residual_diff = -f_mu_prefac * tmp1 + (q_trial - f_mu_prefac * delta_gamma) * visc_exponent * std::pow(tmp, visc_exponent - 1) * (-visc_time * dt) / (tm * tm);
-
                         }
 
-                        T diff_tol = 1e-14;
-                        if (std::abs(residual_diff) < diff_tol){ // otherwise division by zero
-                            debug("DPVisc: WARNING residual_diff too small in abs value = ", residual_diff);
-                            residual_diff = (residual_diff >= 0 ? diff_tol : -diff_tol);
+                        if (std::abs(residual) < 1e-10 * q_trial) { // relative tolerance, residual has units of stress
+                            converged = true;
+                            break;
                         }
 
-                        delta_gamma -= residual / residual_diff;
+                        if (residual > 0) // update bracket: residual > 0 means the root lies to the right
+                            dg_lo = delta_gamma;
+                        else
+                            dg_hi = delta_gamma;
 
-                        if (delta_gamma < 0) // not possible and can also lead to division by zero
-                            delta_gamma = 1e-10;
+                        if (dg_hi - dg_lo < 1e-14 * dg_hi) {
+                            converged = true;
+                            break;
+                        }
+
+                        T dg_step   = residual / residual_diff;
+                        T dg_newton = delta_gamma - dg_step;
+
+                        // bisect if Newton step is not finite, leaves the bracket or does not shrink fast enough
+                        if (!std::isfinite(dg_newton) || dg_newton <= dg_lo || dg_newton > dg_hi || std::abs(2 * dg_step) > std::abs(dg_step_old)) {
+                            dg_step_old = 0.5 * (dg_hi - dg_lo);
+                            delta_gamma = dg_lo + dg_step_old;
+                        }
+                        else {
+                            dg_step_old = dg_step;
+                            delta_gamma = dg_newton;
+                        }
 
                     } // end N-R iterations
+
+                    if (!converged){
+                        debug("DPVisc: FATAL N-R did not converge, residual = ", residual);
+                        exit = 1;
+                    }
 
                 } // end if visc_exponent == 1
 

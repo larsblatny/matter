@@ -47,7 +47,7 @@ void Simulation::saveParticleData(std::string extra){
                 Ee[p] = particle_volume * ( 0.5 * lambda * log_J*log_J + 0.5 * mu * ((Fe.transpose()*Fe).trace() - dim - 2*log_J ) );
             }
             else if (elastic_model == ElasticModel::Hencky){ 
-                Eigen::JacobiSVD<TM> svd(Fe, Eigen::ComputeFullU | Eigen::ComputeFullV);
+                FastSVD svd(Fe);
                 TV hencky_singular = svd.singularValues().array().abs().max(1e-4).log();
                 T  hencky_trace = hencky_singular.sum();
                 TM hencky = svd.matrixU() * hencky_singular.matrix().asDiagonal() * svd.matrixV().transpose();

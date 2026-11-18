@@ -105,6 +105,11 @@ void Simulation::simulate(){
         return;
     }
 
+    if (plastic_model == PlasticModel::VMVisc && q_min > q_max){
+        debug("q_min = ", q_min, " must be smaller than or equal to q_max = ", q_max);
+        return;
+    }
+
     if (dim == 3){
         debug("This is a 3D simulation.");
     }
